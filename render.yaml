@@ -1,0 +1,50 @@
+# Render Build Configuration
+# This file tells Render how to build and deploy your service
+
+# Build Command
+buildCommand: npm install
+
+# Start Command  
+startCommand: npm start
+
+# Environment
+node_version: 18
+
+# Health Check
+healthCheckPath: /health
+
+# Auto Deploy
+autoDeploy: true
+
+# Service Type
+type: web
+
+# Scaling
+scaling:
+  minInstances: 1
+  maxInstances: 3
+
+# Environment Variables (Set these in Render Dashboard)
+envVars:
+  - key: NODE_ENV
+    value: production
+  - key: PORT
+    value: 10000
+  - key: MONGODB_URI
+    sync: false  # Set manually in dashboard
+  - key: FIREBASE_PROJECT_ID
+    value: homebase-25
+  - key: FIREBASE_PRIVATE_KEY_ID
+    sync: false  # Set manually in dashboard
+  - key: FIREBASE_PRIVATE_KEY
+    sync: false  # Set manually in dashboard
+  - key: FIREBASE_CLIENT_EMAIL
+    sync: false  # Set manually in dashboard
+  - key: FIREBASE_CLIENT_ID
+    sync: false  # Set manually in dashboard
+  - key: JWT_SECRET
+    sync: false  # Set manually in dashboard
+  - key: RATE_LIMIT_WINDOW_MS
+    value: "900000"
+  - key: RATE_LIMIT_MAX_REQUESTS
+    value: "50"

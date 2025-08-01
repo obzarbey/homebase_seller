@@ -1,0 +1,44 @@
+{
+  "name": "oshan-product-api",
+  "version": "1.0.0",
+  "description": "Node.js backend for Oshan product management with MongoDB Atlas",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "migrate": "node migrate.js migrate",
+    "validate": "node migrate.js validate",
+    "test": "node test-api.js all",
+    "test:health": "node test-api.js health",
+    "build": "echo 'No build step required'",
+    "deploy": "echo 'Deployment handled by Render'"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.5.0",
+    "firebase-admin": "^11.10.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "joi": "^17.9.2",
+    "helmet": "^7.0.0",
+    "express-rate-limit": "^6.8.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "axios": "^1.5.0"
+  },
+  "keywords": [
+    "nodejs",
+    "express",
+    "mongodb",
+    "firebase",
+    "products",
+    "api"
+  ],
+  "author": "Oshan Team",
+  "license": "MIT"
+}
