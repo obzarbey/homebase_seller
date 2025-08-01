@@ -3,7 +3,7 @@ const Joi = require('joi');
 const validateProduct = (req, res, next) => {
   const schema = Joi.object({
     name: Joi.string().trim().max(100).required(),
-    description: Joi.string().trim().max(1000).required(),
+    description: Joi.string().trim().max(1000).allow('').default('No description provided'),
     price: Joi.number().min(0).required(),
     offerPrice: Joi.number().min(0).default(0),
     imageUrl: Joi.string().uri().required(),
