@@ -52,13 +52,49 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api/products', require('./routes/products'));
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Server is running',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV
-  });
+app.get('/health', async (req, res) => {
+  try {
+    const mongoose = require('mongoose');
+    const connectionState = mongoose.connection.readyState;
+    const states = {
+      0: 'disconnected',
+      1: 'connected',
+      2: 'connecting',
+      3: 'disconnecting'
+    };
+
+    const healthStatus = {
+      success: true,
+      message: 'Server is running',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      server: {
+        port: process.env.PORT || 5000,
+        externalUrl: process.env.RENDER_EXTERNAL_URL || 'localhost'
+      },
+      database: {
+        status: states[connectionState],
+        connected: connectionState === 1,
+        host: mongoose.connection.host || 'not connected'
+      }
+    };
+
+    // Return 500 if database is not connected
+    if (connectionState !== 1) {
+      healthStatus.success = false;
+      healthStatus.message = 'Database not connected';
+      return res.status(500).json(healthStatus);
+    }
+
+    res.status(200).json(healthStatus);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Health check failed',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Root endpoint
@@ -94,11 +130,13 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+  console.log(`🚀 Server running on port ${PORT} in ${NODE_ENV} mode`);
   console.log(`📱 API Base URL: http://localhost:${PORT}`);
   console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
+  console.log(`🌐 External URL: ${process.env.RENDER_EXTERNAL_URL || 'Not available'}`);
 });
 
 module.exports = app;
