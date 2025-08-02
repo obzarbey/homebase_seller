@@ -7,15 +7,15 @@ const {
   updateProduct,
   deleteProduct,
   getSellerProducts,
+  getAllProducts,
   getProductById,
   searchProductsByAddress
 } = require('../controllers/productController');
 
-
 // Public routes (no authentication required)
+router.get('/all', getAllProducts); // New public endpoint for all products
 router.get('/search', searchProductsByAddress);
 router.get('/:id', getProductById);
-router.get('/', require('../controllers/productController').getAllProducts); // Public: all products
 
 // Protected routes (require Firebase authentication)
 router.use(verifyFirebaseToken);
@@ -24,6 +24,6 @@ router.use(verifyFirebaseToken);
 router.post('/', validateProduct, addProduct);
 router.put('/:id', validateProductUpdate, updateProduct);
 router.delete('/:id', deleteProduct);
-router.get('/seller', getSellerProducts); // Authenticated: seller's own products
+router.get('/', getSellerProducts);
 
 module.exports = router;
