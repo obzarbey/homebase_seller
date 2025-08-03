@@ -9,13 +9,15 @@ const {
   getSellerProducts,
   getAllProducts,
   getProductById,
-  searchProductsByAddress
+  searchProductsByAddress,
+  getProductsBySellerIdPublic
 } = require('../controllers/productController');
 
 // Public routes (no authentication required)
 router.get('/all', getAllProducts); // New public endpoint for all products
 router.get('/search', searchProductsByAddress);
 router.get('/:id', getProductById);
+router.get('/seller/:sellerId', getProductsBySellerIdPublic); // Public: Get all products for a specific seller
 
 // Protected routes (require Firebase authentication)
 router.use(verifyFirebaseToken);

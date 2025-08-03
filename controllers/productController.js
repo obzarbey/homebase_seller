@@ -281,6 +281,51 @@ const getAllProducts = async (req, res) => {
   }
 };
 
+// Public: Get all products for a specific seller (no auth required)
+const getProductsBySellerIdPublic = async (req, res) => {
+  try {
+    const { sellerId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const filter = { sellerId };
+    const totalProducts = await Product.countDocuments(filter);
+    const products = await Product.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const totalPages = Math.ceil(totalProducts / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    res.status(200).json({
+      success: true,
+      message: 'Seller products retrieved successfully',
+      data: {
+        products,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalProducts,
+          hasNextPage,
+          hasPrevPage,
+          limit
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching seller products (public):', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch seller products',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   addProduct,
   updateProduct,
@@ -288,5 +333,6 @@ module.exports = {
   getSellerProducts,
   getAllProducts,
   getProductById,
-  searchProductsByAddress
+  searchProductsByAddress,
+  getProductsBySellerIdPublic
 };
