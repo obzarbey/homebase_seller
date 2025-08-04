@@ -9,7 +9,8 @@ const {
   getSellerProducts,
   getAllSellerProducts,
   getSellerProductById,
-  searchSellerProductsByAddress
+  searchSellerProductsByAddress,
+  checkSellerProductExists
 } = require('../controllers/sellerProductController');
 
 // Public routes (no authentication required)
@@ -19,6 +20,9 @@ router.get('/:id', getSellerProductById);
 
 // Protected routes (require Firebase authentication)
 router.use(verifyFirebaseToken);
+
+// Check if seller already has a catalog product
+router.get('/check/:productId', checkSellerProductExists);
 
 // Seller product management routes
 router.post('/', validateSellerProduct, addSellerProduct);

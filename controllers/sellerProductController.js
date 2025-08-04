@@ -321,6 +321,29 @@ const searchSellerProductsByAddress = async (req, res) => {
   }
 };
 
+// Check if seller already has a specific catalog product
+const checkSellerProductExists = async (req, res) => {
+  try {
+    const sellerId = req.user.uid;
+    const { productId } = req.params;
+    
+    const existingProduct = await SellerProduct.findOne({ sellerId, productId });
+    
+    res.status(200).json({
+      success: true,
+      exists: !!existingProduct,
+      message: existingProduct ? 'Product already in your inventory' : 'Product not in your inventory'
+    });
+  } catch (error) {
+    console.error('Error checking seller product:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to check product',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   addSellerProduct,
   updateSellerProduct,
@@ -328,5 +351,6 @@ module.exports = {
   getSellerProducts,
   getAllSellerProducts,
   getSellerProductById,
-  searchSellerProductsByAddress
+  searchSellerProductsByAddress,
+  checkSellerProductExists
 };
