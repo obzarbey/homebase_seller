@@ -10,12 +10,14 @@ const {
   getAllSellerProducts,
   getSellerProductById,
   searchSellerProductsByAddress,
-  checkSellerProductExists
+  checkSellerProductExists,
+  getProductsBySeller
 } = require('../controllers/sellerProductController');
 
 // Public routes (no authentication required)
 router.get('/all', getAllSellerProducts);
 router.get('/search', searchSellerProductsByAddress);
+router.get('/seller/:sellerId', getProductsBySeller);
 router.get('/:id', getSellerProductById);
 
 // Protected routes (require Firebase authentication)

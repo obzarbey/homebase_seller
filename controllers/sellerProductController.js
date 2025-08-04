@@ -365,6 +365,63 @@ const checkSellerProductExists = async (req, res) => {
   }
 };
 
+// Get products by specific seller (public endpoint)
+const getProductsBySeller = async (req, res) => {
+  try {
+    const { sellerId } = req.params;
+    const { page = 1, limit = 20, category, available = true } = req.query;
+    
+    const filter = { 
+      sellerId: sellerId,
+      status: 'active' 
+    };
+    
+    // Only filter by availability if specified
+    if (available !== undefined) {
+      filter.isAvailable = available === 'true';
+    }
+    
+    if (category && category !== 'all') {
+      filter['productId.category'] = category;
+    }
+    
+    const skip = (page - 1) * limit;
+    
+    const products = await SellerProduct.find(filter)
+      .populate('productId')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+    
+    const total = await SellerProduct.countDocuments(filter);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Seller products retrieved successfully',
+      data: {
+        sellerId,
+        products,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(total / limit),
+          totalProducts: total,
+          hasNextPage: page < Math.ceil(total / limit),
+          hasPrevPage: page > 1,
+          limit: parseInt(limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching seller products:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch seller products',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   addSellerProduct,
   updateSellerProduct,
@@ -373,5 +430,6 @@ module.exports = {
   getAllSellerProducts,
   getSellerProductById,
   searchSellerProductsByAddress,
-  checkSellerProductExists
+  checkSellerProductExists,
+  getProductsBySeller
 };
