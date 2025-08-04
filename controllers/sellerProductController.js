@@ -203,35 +203,112 @@ const getSellerProducts = async (req, res) => {
 // Get all seller products (public endpoint)
 const getAllSellerProducts = async (req, res) => {
   try {
-    const { page = 1, limit = 20, category, address, sellerId } = req.query;
+    const { page = 1, limit = 20, category, address, sellerId, search } = req.query;
     
-    const filter = { 
-      isAvailable: true, 
-      status: 'active' 
+    // Build aggregation pipeline for proper JOIN
+    const pipeline = [];
+    
+    // Match stage - filter seller products
+    const matchStage = {
+      isAvailable: true,
+      status: 'active'
     };
     
-    if (category && category !== 'all') {
-      filter['productId.category'] = category;
-    }
-    
     if (address) {
-      filter.address = { $regex: address, $options: 'i' };
+      matchStage.address = { $regex: address, $options: 'i' };
     }
     
     if (sellerId) {
-      filter.sellerId = sellerId;
+      matchStage.sellerId = sellerId;
     }
     
+    pipeline.push({ $match: matchStage });
+    
+    // Lookup stage - JOIN with ProductCatalog
+    pipeline.push({
+      $lookup: {
+        from: 'productcatalogs',
+        localField: 'productId',
+        foreignField: '_id',
+        as: 'catalogData'
+      }
+    });
+    
+    // Unwind catalog data
+    pipeline.push({
+      $unwind: {
+        path: '$catalogData',
+        preserveNullAndEmptyArrays: true
+      }
+    });
+    
+    // Filter by category if specified
+    if (category && category !== 'all') {
+      pipeline.push({
+        $match: {
+          'catalogData.category': category
+        }
+      });
+    }
+    
+    // Filter by search term if specified
+    if (search) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { 'catalogData.name': { $regex: search, $options: 'i' } },
+            { 'catalogData.brand': { $regex: search, $options: 'i' } },
+            { 'catalogData.description': { $regex: search, $options: 'i' } },
+            { customNote: { $regex: search, $options: 'i' } }
+          ]
+        }
+      });
+    }
+    
+    // Project stage - flatten the structure for Flutter app
+    pipeline.push({
+      $project: {
+        _id: 1,
+        sellerId: 1,
+        productId: 1,
+        price: 1,
+        offerPrice: 1,
+        stock: 1,
+        address: 1,
+        customNote: 1,
+        customImageUrl: 1,
+        customImagePath: 1,
+        isAvailable: 1,
+        status: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        // Flattened catalog data - what Flutter expects
+        name: '$catalogData.name',
+        brand: '$catalogData.brand',
+        category: '$catalogData.category',
+        description: '$catalogData.description',
+        unit: '$catalogData.unit',
+        imageUrl: '$catalogData.imageUrl',
+        catalogStatus: '$catalogData.status'
+      }
+    });
+    
+    // Sort stage
+    pipeline.push({ $sort: { createdAt: -1 } });
+    
+    // Add pagination
     const skip = (page - 1) * limit;
+    pipeline.push({ $skip: skip });
+    pipeline.push({ $limit: parseInt(limit) });
     
-    const products = await SellerProduct.find(filter)
-      .populate('productId')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit))
-      .lean();
+    // Execute aggregation
+    const products = await SellerProduct.aggregate(pipeline);
     
-    const total = await SellerProduct.countDocuments(filter);
+    // Get total count for pagination (separate pipeline without skip/limit)
+    const countPipeline = pipeline.slice(0, -2); // Remove skip and limit
+    countPipeline.push({ $count: 'total' });
+    const totalResult = await SellerProduct.aggregate(countPipeline);
+    const total = totalResult.length > 0 ? totalResult[0].total : 0;
     
     res.status(200).json({
       success: true,
@@ -263,7 +340,53 @@ const getSellerProductById = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const product = await SellerProduct.findById(id).populate('productId');
+    // Use aggregation for consistent flattened structure
+    const pipeline = [
+      { $match: { _id: require('mongoose').Types.ObjectId(id) } },
+      {
+        $lookup: {
+          from: 'productcatalogs',
+          localField: 'productId',
+          foreignField: '_id',
+          as: 'catalogData'
+        }
+      },
+      {
+        $unwind: {
+          path: '$catalogData',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          sellerId: 1,
+          productId: 1,
+          price: 1,
+          offerPrice: 1,
+          stock: 1,
+          address: 1,
+          customNote: 1,
+          customImageUrl: 1,
+          customImagePath: 1,
+          isAvailable: 1,
+          status: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          // Flattened catalog data - what Flutter expects
+          name: '$catalogData.name',
+          brand: '$catalogData.brand',
+          category: '$catalogData.category',
+          description: '$catalogData.description',
+          unit: '$catalogData.unit',
+          imageUrl: '$catalogData.imageUrl',
+          catalogStatus: '$catalogData.status'
+        }
+      }
+    ];
+    
+    const result = await SellerProduct.aggregate(pipeline);
+    const product = result.length > 0 ? result[0] : null;
     
     if (!product) {
       return res.status(404).json({
@@ -290,7 +413,7 @@ const getSellerProductById = async (req, res) => {
 // Search products by address (public endpoint)
 const searchSellerProductsByAddress = async (req, res) => {
   try {
-    const { address, page = 1, limit = 10, category } = req.query;
+    const { address, page = 1, limit = 10, category, search } = req.query;
     
     if (!address) {
       return res.status(400).json({
@@ -299,25 +422,103 @@ const searchSellerProductsByAddress = async (req, res) => {
       });
     }
     
-    const filter = {
+    // Build aggregation pipeline for proper JOIN
+    const pipeline = [];
+    
+    // Match stage - filter by address and other criteria
+    const matchStage = {
       address: { $regex: address, $options: 'i' },
       isAvailable: true,
       status: 'active'
     };
     
+    pipeline.push({ $match: matchStage });
+    
+    // Lookup stage - JOIN with ProductCatalog
+    pipeline.push({
+      $lookup: {
+        from: 'productcatalogs',
+        localField: 'productId',
+        foreignField: '_id',
+        as: 'catalogData'
+      }
+    });
+    
+    // Unwind catalog data
+    pipeline.push({
+      $unwind: {
+        path: '$catalogData',
+        preserveNullAndEmptyArrays: true
+      }
+    });
+    
+    // Filter by category if specified
     if (category && category !== 'all') {
-      filter['productId.category'] = category;
+      pipeline.push({
+        $match: {
+          'catalogData.category': category
+        }
+      });
     }
     
+    // Filter by search term if specified
+    if (search) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { 'catalogData.name': { $regex: search, $options: 'i' } },
+            { 'catalogData.brand': { $regex: search, $options: 'i' } },
+            { 'catalogData.description': { $regex: search, $options: 'i' } },
+            { customNote: { $regex: search, $options: 'i' } }
+          ]
+        }
+      });
+    }
+    
+    // Project stage - flatten the structure for Flutter app
+    pipeline.push({
+      $project: {
+        _id: 1,
+        sellerId: 1,
+        productId: 1,
+        price: 1,
+        offerPrice: 1,
+        stock: 1,
+        address: 1,
+        customNote: 1,
+        customImageUrl: 1,
+        customImagePath: 1,
+        isAvailable: 1,
+        status: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        // Flattened catalog data - what Flutter expects
+        name: '$catalogData.name',
+        brand: '$catalogData.brand',
+        category: '$catalogData.category',
+        description: '$catalogData.description',
+        unit: '$catalogData.unit',
+        imageUrl: '$catalogData.imageUrl',
+        catalogStatus: '$catalogData.status'
+      }
+    });
+    
+    // Sort stage
+    pipeline.push({ $sort: { createdAt: -1 } });
+    
+    // Add pagination
     const skip = (page - 1) * limit;
+    pipeline.push({ $skip: skip });
+    pipeline.push({ $limit: parseInt(limit) });
     
-    const products = await SellerProduct.find(filter)
-      .populate('productId')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
+    // Execute aggregation
+    const products = await SellerProduct.aggregate(pipeline);
     
-    const total = await SellerProduct.countDocuments(filter);
+    // Get total count for pagination (separate pipeline without skip/limit)
+    const countPipeline = pipeline.slice(0, -2); // Remove skip and limit
+    countPipeline.push({ $count: 'total' });
+    const totalResult = await SellerProduct.aggregate(countPipeline);
+    const total = totalResult.length > 0 ? totalResult[0].total : 0;
     
     res.status(200).json({
       success: true,
@@ -325,10 +526,12 @@ const searchSellerProductsByAddress = async (req, res) => {
       data: {
         products,
         pagination: {
-          current: parseInt(page),
-          total: Math.ceil(total / limit),
-          count: products.length,
-          totalProducts: total
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(total / limit),
+          totalProducts: total,
+          hasNextPage: page < Math.ceil(total / limit),
+          hasPrevPage: page > 1,
+          limit: parseInt(limit)
         }
       }
     });
@@ -369,32 +572,109 @@ const checkSellerProductExists = async (req, res) => {
 const getProductsBySeller = async (req, res) => {
   try {
     const { sellerId } = req.params;
-    const { page = 1, limit = 20, category, available = true } = req.query;
+    const { page = 1, limit = 20, category, available = true, search } = req.query;
     
-    const filter = { 
+    // Build aggregation pipeline for proper JOIN
+    const pipeline = [];
+    
+    // Match stage - filter by seller and other criteria
+    const matchStage = {
       sellerId: sellerId,
-      status: 'active' 
+      status: 'active'
     };
     
     // Only filter by availability if specified
     if (available !== undefined) {
-      filter.isAvailable = available === 'true';
+      matchStage.isAvailable = available === 'true';
     }
     
+    pipeline.push({ $match: matchStage });
+    
+    // Lookup stage - JOIN with ProductCatalog
+    pipeline.push({
+      $lookup: {
+        from: 'productcatalogs',
+        localField: 'productId',
+        foreignField: '_id',
+        as: 'catalogData'
+      }
+    });
+    
+    // Unwind catalog data
+    pipeline.push({
+      $unwind: {
+        path: '$catalogData',
+        preserveNullAndEmptyArrays: true
+      }
+    });
+    
+    // Filter by category if specified
     if (category && category !== 'all') {
-      filter['productId.category'] = category;
+      pipeline.push({
+        $match: {
+          'catalogData.category': category
+        }
+      });
     }
     
+    // Filter by search term if specified
+    if (search) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { 'catalogData.name': { $regex: search, $options: 'i' } },
+            { 'catalogData.brand': { $regex: search, $options: 'i' } },
+            { 'catalogData.description': { $regex: search, $options: 'i' } },
+            { customNote: { $regex: search, $options: 'i' } }
+          ]
+        }
+      });
+    }
+    
+    // Project stage - flatten the structure for Flutter app
+    pipeline.push({
+      $project: {
+        _id: 1,
+        sellerId: 1,
+        productId: 1,
+        price: 1,
+        offerPrice: 1,
+        stock: 1,
+        address: 1,
+        customNote: 1,
+        customImageUrl: 1,
+        customImagePath: 1,
+        isAvailable: 1,
+        status: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        // Flattened catalog data - what Flutter expects
+        name: '$catalogData.name',
+        brand: '$catalogData.brand',
+        category: '$catalogData.category',
+        description: '$catalogData.description',
+        unit: '$catalogData.unit',
+        imageUrl: '$catalogData.imageUrl',
+        catalogStatus: '$catalogData.status'
+      }
+    });
+    
+    // Sort stage
+    pipeline.push({ $sort: { createdAt: -1 } });
+    
+    // Add pagination
     const skip = (page - 1) * limit;
+    pipeline.push({ $skip: skip });
+    pipeline.push({ $limit: parseInt(limit) });
     
-    const products = await SellerProduct.find(filter)
-      .populate('productId')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit))
-      .lean();
+    // Execute aggregation
+    const products = await SellerProduct.aggregate(pipeline);
     
-    const total = await SellerProduct.countDocuments(filter);
+    // Get total count for pagination (separate pipeline without skip/limit)
+    const countPipeline = pipeline.slice(0, -2); // Remove skip and limit
+    countPipeline.push({ $count: 'total' });
+    const totalResult = await SellerProduct.aggregate(countPipeline);
+    const total = totalResult.length > 0 ? totalResult[0].total : 0;
     
     res.status(200).json({
       success: true,
