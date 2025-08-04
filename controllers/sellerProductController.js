@@ -78,9 +78,30 @@ const updateSellerProduct = async (req, res) => {
       });
     }
     
+    // Only allow updating seller-specific fields, not catalog references
+    const allowedUpdates = {
+      price: req.body.price,
+      offerPrice: req.body.offerPrice,
+      stock: req.body.stock,
+      address: req.body.address,
+      customNote: req.body.customNote,
+      customImageUrl: req.body.customImageUrl,
+      customImagePath: req.body.customImagePath,
+      isAvailable: req.body.isAvailable,
+      status: req.body.status,
+      updatedAt: new Date()
+    };
+    
+    // Remove undefined values
+    Object.keys(allowedUpdates).forEach(key => {
+      if (allowedUpdates[key] === undefined) {
+        delete allowedUpdates[key];
+      }
+    });
+    
     const updatedProduct = await SellerProduct.findByIdAndUpdate(
       id,
-      { ...req.body, updatedAt: new Date() },
+      allowedUpdates,
       { new: true, runValidators: true }
     ).populate('productId');
     
