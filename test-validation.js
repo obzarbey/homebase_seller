@@ -15,7 +15,7 @@ const productData = JSON.stringify({
 });
 
 const options = {
-  hostname: 'homebase-seller.onrender.com',
+  hostname: 'buynor-seller.onrender.com',
   port: 443,
   path: '/api/products',
   method: 'POST',

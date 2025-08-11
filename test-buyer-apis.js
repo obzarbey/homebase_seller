@@ -1,7 +1,7 @@
 // Test script for Buyer App APIs with flattened JOIN structure
 // Run with: node test-buyer-apis.js
 
-const API_BASE_URL = 'https://homebase-seller.onrender.com/api';
+const API_BASE_URL = 'https://buynor-seller.onrender.com/api';
 
 async function testAPI(endpoint, description) {
   console.log(`\n🧪 Testing: ${description}`);

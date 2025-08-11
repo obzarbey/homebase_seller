@@ -3,7 +3,7 @@ const https = require('https');
 console.log('🔍 Testing MongoDB API on Render...');
 
 // Test health endpoint
-https.get('https://homebase-seller.onrender.com/health', (res) => {
+https.get('https://buynor-seller.onrender.com/health', (res) => {
   let data = '';
   res.on('data', (chunk) => {
     data += chunk;
