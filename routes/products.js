@@ -10,6 +10,7 @@ const {
   getAllProducts,
   getProductById,
   searchProductsByAddress,
+  
   getProductsBySellerIdPublic
 } = require('../controllers/productController');
 
