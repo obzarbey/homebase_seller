@@ -40,6 +40,12 @@ const sellerProductSchema = new mongoose.Schema({
     maxlength: 500,
     default: ''
   },
+  customName: {
+    type: String,
+    trim: true,
+    maxlength: 100,
+    default: null
+  },
   // Seller's location for this product
   address: {
     type: String,
