@@ -68,6 +68,12 @@ const sellerProductSchema = new mongoose.Schema({
     default: true,
     index: true
   },
+  // Pre-owned/Used condition (only for Electronics category)
+  isPreOwned: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
   // Sales tracking
   totalSales: {
     type: Number,

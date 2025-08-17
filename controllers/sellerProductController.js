@@ -41,7 +41,8 @@ const addSellerProduct = async (req, res) => {
       address,
       customNote: customNote || '',
       customImageUrl: customImageUrl || null,
-      customImagePath: customImagePath || null
+      customImagePath: customImagePath || null,
+      isPreOwned: req.body.isPreOwned || false
     });
     
     const savedProduct = await sellerProduct.save();
@@ -88,6 +89,7 @@ const updateSellerProduct = async (req, res) => {
       customImageUrl: req.body.customImageUrl,
       customImagePath: req.body.customImagePath,
       isAvailable: req.body.isAvailable,
+      isPreOwned: req.body.isPreOwned,
       status: req.body.status,
       updatedAt: new Date()
     };
