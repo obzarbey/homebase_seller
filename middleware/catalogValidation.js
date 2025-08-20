@@ -36,6 +36,7 @@ const validateSellerProduct = (req, res, next) => {
     customImageUrl: Joi.string().uri().allow(null).default(null),
     customImagePath: Joi.string().allow('').default(null),
     isAvailable: Joi.boolean().default(true),
+    isPreOwned: Joi.boolean().default(false),
     status: Joi.string().valid('active', 'inactive', 'out_of_stock').default('active')
   });
 
@@ -64,6 +65,7 @@ const validateSellerProductUpdate = (req, res, next) => {
     customImageUrl: Joi.string().uri().allow(null),
     customImagePath: Joi.string().allow(''),
     isAvailable: Joi.boolean(),
+    isPreOwned: Joi.boolean(),
     status: Joi.string().valid('active', 'inactive', 'out_of_stock')
   });
 
