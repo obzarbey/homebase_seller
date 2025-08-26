@@ -5,7 +5,7 @@ const ProductCatalog = require('../models/ProductCatalog');
 const addSellerProduct = async (req, res) => {
   try {
     const sellerId = req.user.uid;
-    const { productId, price, offerPrice, stock, address, customNote, customImageUrl, customImagePath } = req.body;
+    const { productId, price, offerPrice, stock, address, customNote, customName, customCategory, customImageUrl, customImagePath } = req.body;
     
     // Verify catalog product exists and is approved
     const catalogProduct = await ProductCatalog.findById(productId);
@@ -40,6 +40,8 @@ const addSellerProduct = async (req, res) => {
       stock,
       address,
       customNote: customNote || '',
+      customName: customName || null,
+      customCategory: customCategory || null,
       customImageUrl: customImageUrl || null,
       customImagePath: customImagePath || null,
       isPreOwned: req.body.isPreOwned || false
@@ -86,6 +88,8 @@ const updateSellerProduct = async (req, res) => {
       stock: req.body.stock,
       address: req.body.address,
       customNote: req.body.customNote,
+      customName: req.body.customName,
+      customCategory: req.body.customCategory,
       customImageUrl: req.body.customImageUrl,
       customImagePath: req.body.customImagePath,
       isAvailable: req.body.isAvailable,
@@ -278,6 +282,7 @@ const getAllSellerProducts = async (req, res) => {
         stock: 1,
         address: 1,
         customNote: 1,
+        customCategory: 1,
         customImageUrl: 1,
         customImagePath: 1,
         isAvailable: 1,
@@ -287,6 +292,8 @@ const getAllSellerProducts = async (req, res) => {
         updatedAt: 1,
         // Flattened catalog data - what Flutter expects
         name: '$catalogData.name',
+
+        customCatalogCategory: '$catalogData.category',
         brand: '$catalogData.brand',
         category: '$catalogData.category',
         description: '$catalogData.description',
@@ -370,6 +377,7 @@ const getSellerProductById = async (req, res) => {
           stock: 1,
           address: 1,
           customNote: 1,
+          customCategory: 1,
           customImageUrl: 1,
           customImagePath: 1,
           isAvailable: 1,
@@ -379,6 +387,8 @@ const getSellerProductById = async (req, res) => {
           updatedAt: 1,
           // Flattened catalog data - what Flutter expects
           name: '$catalogData.name',
+
+          customCatalogCategory: '$catalogData.category',
           brand: '$catalogData.brand',
           category: '$catalogData.category',
           description: '$catalogData.description',
@@ -490,6 +500,7 @@ const searchSellerProductsByAddress = async (req, res) => {
         stock: 1,
         address: 1,
         customNote: 1,
+        customCategory: 1,
         customImageUrl: 1,
         customImagePath: 1,
         isAvailable: 1,
@@ -499,6 +510,8 @@ const searchSellerProductsByAddress = async (req, res) => {
         updatedAt: 1,
         // Flattened catalog data - what Flutter expects
         name: '$catalogData.name',
+
+        customCatalogCategory: '$catalogData.category',
         brand: '$catalogData.brand',
         category: '$catalogData.category',
         description: '$catalogData.description',
@@ -647,6 +660,7 @@ const getProductsBySeller = async (req, res) => {
         stock: 1,
         address: 1,
         customNote: 1,
+        customCategory: 1,
         customImageUrl: 1,
         customImagePath: 1,
         isAvailable: 1,
@@ -656,6 +670,8 @@ const getProductsBySeller = async (req, res) => {
         updatedAt: 1,
         // Flattened catalog data - what Flutter expects
         name: '$catalogData.name',
+
+        customCatalogCategory: '$catalogData.category',
         brand: '$catalogData.brand',
         category: '$catalogData.category',
         description: '$catalogData.description',
