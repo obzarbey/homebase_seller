@@ -93,7 +93,7 @@ const createCatalogProduct = async (req, res) => {
     const catalogProduct = new ProductCatalog({
       ...req.body,
       createdBy: sellerId,
-      status: 'pending' // Requires admin approval
+      status: 'approved' // Requires admin approval
     });
     
     const savedProduct = await catalogProduct.save();
