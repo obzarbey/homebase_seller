@@ -164,12 +164,13 @@ const deleteSellerProduct = async (req, res) => {
 const getSellerProducts = async (req, res) => {
   try {
     const sellerId = req.user.uid;
-    const { page = 1, limit = 10, category, status, isAvailable } = req.query;
+  const { page = 1, limit = 10, category, status, isAvailable, onlyOffers } = req.query;
     
     const filter = { sellerId };
     if (category) filter['productId.category'] = category;
     if (status) filter.status = status;
     if (isAvailable !== undefined) filter.isAvailable = isAvailable === 'true';
+  if (onlyOffers === 'true') filter.offerPrice = { $gt: 0 };
     
     const skip = (page - 1) * limit;
     
@@ -209,13 +210,13 @@ const getSellerProducts = async (req, res) => {
 // Get all seller products (public endpoint)
 const getAllSellerProducts = async (req, res) => {
   try {
-    const { page = 1, limit = 20, category, address, sellerId, search } = req.query;
+  const { page = 1, limit = 20, category, address, sellerId, search, onlyOffers } = req.query;
     
     // Build aggregation pipeline for proper JOIN
     const pipeline = [];
     
     // Match stage - filter seller products
-    const matchStage = {
+  const matchStage = {
       isAvailable: true,
       status: 'active'
     };
@@ -226,6 +227,9 @@ const getAllSellerProducts = async (req, res) => {
     
     if (sellerId) {
       matchStage.sellerId = sellerId;
+    }
+    if (onlyOffers === 'true') {
+      matchStage.offerPrice = { $gt: 0 };
     }
     
     pipeline.push({ $match: matchStage });
