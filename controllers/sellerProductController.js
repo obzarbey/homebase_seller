@@ -724,6 +724,48 @@ const getProductsBySeller = async (req, res) => {
   }
 };
 
+// Update all seller products' address when seller updates their address
+const updateAllSellerProductsAddress = async (req, res) => {
+  try {
+    const sellerId = req.user.uid;
+    const { address } = req.body;
+    
+    if (!address || address.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Address is required'
+      });
+    }
+    
+    // Update all products for this seller with the new address
+    const updateResult = await SellerProduct.updateMany(
+      { sellerId },
+      { 
+        address: address.trim(),
+        updatedAt: new Date()
+      }
+    );
+    
+    res.status(200).json({
+      success: true,
+      message: `Successfully updated address for ${updateResult.modifiedCount} products`,
+      data: {
+        sellerId,
+        newAddress: address.trim(),
+        productsUpdated: updateResult.modifiedCount,
+        productsMatched: updateResult.matchedCount
+      }
+    });
+  } catch (error) {
+    console.error('Error updating seller products address:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update products address',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   addSellerProduct,
   updateSellerProduct,
@@ -733,5 +775,6 @@ module.exports = {
   getSellerProductById,
   searchSellerProductsByAddress,
   checkSellerProductExists,
-  getProductsBySeller
+  getProductsBySeller,
+  updateAllSellerProductsAddress
 };

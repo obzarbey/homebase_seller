@@ -11,7 +11,8 @@ const {
   getSellerProductById,
   searchSellerProductsByAddress,
   checkSellerProductExists,
-  getProductsBySeller
+  getProductsBySeller,
+  updateAllSellerProductsAddress
 } = require('../controllers/sellerProductController');
 
 // Public routes (no authentication required)
@@ -29,6 +30,7 @@ router.get('/check/:productId', checkSellerProductExists);
 // Seller product management routes
 router.post('/', validateSellerProduct, addSellerProduct);
 router.put('/:id', validateSellerProductUpdate, updateSellerProduct);
+router.put('/update-address/all', updateAllSellerProductsAddress);
 router.delete('/:id', deleteSellerProduct);
 router.get('/', getSellerProducts);
 
