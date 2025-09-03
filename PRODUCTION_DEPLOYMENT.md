@@ -7,7 +7,7 @@ This guide will help you deploy your Oshan Product API to production using Rende
 1. **GitHub Account** - Your code should be in a GitHub repository
 2. **MongoDB Atlas Account** - For production database
 3. **Render Account** - Sign up at [render.com](https://render.com)
-4. **Firebase Project** - Your existing Firebase project (homebase-25)
+4. **Firebase Project** - Your existing Firebase project (buynor-25)
 
 ## 🗄️ Step 1: MongoDB Atlas Production Setup
 
@@ -38,7 +38,7 @@ mongodb+srv://oshan_prod_user:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/oshan_pro
 
 ### 2.1 Create Production Service Account
 1. Go to [Firebase Console](https://console.firebase.google.com)
-2. Select your project: **homebase-25**
+2. Select your project: **buynor-25**
 3. **Project Settings** → **Service Accounts**
 4. **Generate new private key** (for production)
 5. Download the JSON file
@@ -47,10 +47,10 @@ mongodb+srv://oshan_prod_user:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/oshan_pro
 From the downloaded JSON file, extract:
 ```json
 {
-  "project_id": "homebase-25",
+  "project_id": "buynor-25",
   "private_key_id": "production_key_id",
   "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
-  "client_email": "firebase-adminsdk-xxx@homebase-25.iam.gserviceaccount.com",
+  "client_email": "firebase-adminsdk-xxx@buynor-25.iam.gserviceaccount.com",
   "client_id": "123456789..."
 }
 ```
@@ -90,7 +90,7 @@ MONGODB_URI = mongodb+srv://oshan_prod_user:YOUR_PASSWORD@cluster0.xxxxx.mongodb
 
 #### Firebase Admin SDK:
 ```
-FIREBASE_PROJECT_ID = homebase-25
+FIREBASE_PROJECT_ID = buynor-25
 FIREBASE_PRIVATE_KEY_ID = [from JSON file]
 FIREBASE_PRIVATE_KEY = [from JSON file - include the quotes and \n]
 FIREBASE_CLIENT_EMAIL = [from JSON file]
@@ -179,7 +179,7 @@ If you have existing products in Firestore:
 ```bash
 # Set production environment variables locally
 export MONGODB_URI="your_production_mongodb_uri"
-export FIREBASE_PROJECT_ID="homebase-25"
+export FIREBASE_PROJECT_ID="buynor-25"
 # ... other Firebase variables
 
 # Run migration

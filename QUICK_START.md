@@ -6,7 +6,7 @@
 - [ ] GitHub account with your code
 - [ ] MongoDB Atlas account (free tier OK)
 - [ ] Render account (free tier available)
-- [ ] Firebase project (existing: homebase-25)
+- [ ] Firebase project (existing: buynor-25)
 
 ### 2. MongoDB Atlas Setup (2 minutes)
 ```
@@ -19,7 +19,7 @@
 
 ### 3. Firebase Admin SDK (1 minute)
 ```
-1. Firebase Console → homebase-25 → Settings → Service Accounts
+1. Firebase Console → buynor-25 → Settings → Service Accounts
 2. Generate new private key
 3. Download JSON file
 4. Keep it handy for environment variables
@@ -42,7 +42,7 @@ Copy these to Render dashboard:
 NODE_ENV=production
 PORT=10000
 MONGODB_URI=mongodb+srv://oshan_prod_user:PASSWORD@cluster.mongodb.net/oshan_products_prod?retryWrites=true&w=majority
-FIREBASE_PROJECT_ID=homebase-25
+FIREBASE_PROJECT_ID=buynor-25
 FIREBASE_PRIVATE_KEY_ID=[from JSON]
 FIREBASE_PRIVATE_KEY=[from JSON - keep quotes and \n]
 FIREBASE_CLIENT_EMAIL=[from JSON]

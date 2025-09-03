@@ -8,8 +8,12 @@
     "dev": "nodemon server.js",
     "migrate": "node migrate.js migrate",
     "validate": "node migrate.js validate",
+    "migrate-catalog": "node migrate-to-catalog.js migrate",
+    "validate-catalog": "node migrate-to-catalog.js validate",
+    "cleanup-old": "node migrate-to-catalog.js cleanup",
     "test": "node test-api.js all",
     "test:health": "node test-api.js health",
+    "test:centralized": "node test-centralized-api.js",
     "build": "echo 'No build step required'",
     "deploy": "echo 'Deployment handled by Render'"
   },

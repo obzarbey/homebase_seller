@@ -49,7 +49,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Routes
-app.use('/api/products', require('./routes/products'));
+app.use('/api/products', require('./routes/products')); // Legacy products route
+app.use('/api/catalog', require('./routes/catalog')); // New centralized catalog
+app.use('/api/seller-products', require('./routes/sellerProducts')); // New seller products
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
