@@ -26,6 +26,7 @@ router.use(verifyFirebaseToken);
 router.post('/', validateProduct, addProduct);
 router.put('/:id', validateProductUpdate, updateProduct);
 router.delete('/:id', deleteProduct);
+// Supports optional query params: page, limit, category, isAvailable, search/q
 router.get('/', getSellerProducts);
 
 module.exports = router;

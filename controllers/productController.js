@@ -101,22 +101,38 @@ const deleteProduct = async (req, res) => {
 const getSellerProducts = async (req, res) => {
   try {
     const sellerId = req.user.uid;
-    const { page = 1, limit = 10, category, isAvailable } = req.query;
+    const { page = 1, limit = 10, category, isAvailable, search, q } = req.query;
+
+    // Normalize pagination numbers
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
 
     // Build filter
     const filter = { sellerId };
     if (category) filter.category = category;
     if (isAvailable !== undefined) filter.isAvailable = isAvailable === 'true';
 
+    // Optional text search (by name/category/address)
+    const searchTerm = (search || q || '').toString().trim();
+    if (searchTerm) {
+      const regex = new RegExp(searchTerm, 'i');
+      filter.$or = [
+        { name: regex },
+        { category: regex },
+        { address: regex },
+      ];
+    }
+
     // Calculate pagination
-    const skip = (page - 1) * limit;
+    const skip = (pageNum - 1) * limitNum;
 
-    const products = await Product.find(filter)
-      .sort({ timestamp: -1 }) // Most recent first
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    const total = await Product.countDocuments(filter);
+    const [products, total] = await Promise.all([
+      Product.find(filter)
+        .sort({ timestamp: -1 }) // Most recent first
+        .skip(skip)
+        .limit(limitNum),
+      Product.countDocuments(filter),
+    ]);
 
     res.status(200).json({
       success: true,
@@ -124,8 +140,8 @@ const getSellerProducts = async (req, res) => {
       data: {
         products,
         pagination: {
-          current: parseInt(page),
-          total: Math.ceil(total / limit),
+          current: pageNum,
+          total: Math.ceil(total / limitNum),
           count: products.length,
           totalProducts: total
         }
