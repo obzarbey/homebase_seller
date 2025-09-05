@@ -776,9 +776,14 @@ const updateAllSellerProductsAddress = async (req, res) => {
 };
 
 // Update stock for multiple products (for order processing)
+// Accepts orderItems: Array of
+// - { productId, sellerId, quantityToReduce } where productId can be either the catalog productId (preferred)
+//   or the seller product _id (legacy/client variations)
+// - OR { sellerProductId, sellerId, quantityToReduce }
+// The controller will flexibly resolve the correct SellerProduct document.
 const updateStockForOrder = async (req, res) => {
   try {
-    const { orderItems } = req.body; // Array of { productId, sellerId, quantityToReduce }
+  const { orderItems } = req.body; // See accepted shapes above
     
     if (!orderItems || !Array.isArray(orderItems) || orderItems.length === 0) {
       return res.status(400).json({
@@ -792,20 +797,32 @@ const updateStockForOrder = async (req, res) => {
 
     // Process each item in the order
     for (const item of orderItems) {
-      const { productId, sellerId, quantityToReduce } = item;
-      
-      if (!productId || !sellerId || !quantityToReduce) {
+      const { productId, sellerId, sellerProductId, quantityToReduce } = item;
+
+      if (!sellerId || !quantityToReduce || (!productId && !sellerProductId)) {
         return res.status(400).json({
           success: false,
-          message: 'Each order item must have productId, sellerId, and quantityToReduce'
+          message: 'Each order item must have sellerId, quantityToReduce and either productId or sellerProductId'
         });
       }
 
-      // Find the seller product
-      const sellerProduct = await SellerProduct.findOne({ 
-        productId, 
-        sellerId 
-      }).populate('productId');
+      // Resolve the SellerProduct document using flexible strategies
+      let sellerProduct = null;
+
+      // 1) Explicit sellerProductId takes precedence
+      if (sellerProductId) {
+        sellerProduct = await SellerProduct.findOne({ _id: sellerProductId, sellerId }).populate('productId');
+      }
+
+      // 2) Try standard lookup by catalog productId
+      if (!sellerProduct && productId) {
+        sellerProduct = await SellerProduct.findOne({ productId, sellerId }).populate('productId');
+      }
+
+      // 3) If still not found, the provided productId might actually be the seller product _id
+      if (!sellerProduct && productId) {
+        sellerProduct = await SellerProduct.findOne({ _id: productId, sellerId }).populate('productId');
+      }
 
       if (!sellerProduct) {
         return res.status(404).json({
@@ -815,7 +832,8 @@ const updateStockForOrder = async (req, res) => {
       }
 
       const currentStock = sellerProduct.stock;
-      const newStock = currentStock - quantityToReduce;
+  let newStock = currentStock - quantityToReduce;
+  if (newStock < 0) newStock = 0; // Avoid negative stock
 
       // Check for low stock (less than 5)
       if (newStock < 5) {

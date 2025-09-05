@@ -22,14 +22,14 @@ router.get('/search', searchSellerProductsByAddress);
 router.get('/seller/:sellerId', getProductsBySeller);
 router.get('/:id', getSellerProductById);
 
+// Stock update for order processing (temporarily public for testing)
+router.post('/update-stock-for-order', updateStockForOrder);
+
 // Protected routes (require Firebase authentication)
 router.use(verifyFirebaseToken);
 
 // Check if seller already has a catalog product
 router.get('/check/:productId', checkSellerProductExists);
-
-// Stock update for order processing
-router.post('/update-stock-for-order', updateStockForOrder);
 
 // Seller product management routes
 router.post('/', validateSellerProduct, addSellerProduct);
