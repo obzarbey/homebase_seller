@@ -770,6 +770,96 @@ const updateAllSellerProductsAddress = async (req, res) => {
   }
 };
 
+// Update stock for multiple products (for order processing)
+const updateStockForOrder = async (req, res) => {
+  try {
+    const { orderItems } = req.body; // Array of { productId, sellerId, quantityToReduce }
+    
+    if (!orderItems || !Array.isArray(orderItems) || orderItems.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'orderItems array is required'
+      });
+    }
+
+    const stockUpdates = [];
+    const lowStockProducts = [];
+
+    // Process each item in the order
+    for (const item of orderItems) {
+      const { productId, sellerId, quantityToReduce } = item;
+      
+      if (!productId || !sellerId || !quantityToReduce) {
+        return res.status(400).json({
+          success: false,
+          message: 'Each order item must have productId, sellerId, and quantityToReduce'
+        });
+      }
+
+      // Find the seller product
+      const sellerProduct = await SellerProduct.findOne({ 
+        productId, 
+        sellerId 
+      }).populate('productId');
+
+      if (!sellerProduct) {
+        return res.status(404).json({
+          success: false,
+          message: `Seller product not found for productId: ${productId}, sellerId: ${sellerId}`
+        });
+      }
+
+      const currentStock = sellerProduct.stock;
+      const newStock = currentStock - quantityToReduce;
+
+      // Check for low stock (less than 5)
+      if (newStock < 5) {
+        const productName = sellerProduct.customName || sellerProduct.productId.name;
+        lowStockProducts.push({
+          productName,
+          newStock,
+          sellerId
+        });
+      }
+
+      // Update the stock
+      await SellerProduct.findByIdAndUpdate(
+        sellerProduct._id,
+        { 
+          stock: newStock,
+          updatedAt: new Date()
+        },
+        { runValidators: true }
+      );
+
+      stockUpdates.push({
+        productId,
+        sellerId,
+        previousStock: currentStock,
+        newStock,
+        quantityReduced: quantityToReduce
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Stock updated successfully for all order items',
+      data: {
+        stockUpdates,
+        lowStockProducts
+      }
+    });
+
+  } catch (error) {
+    console.error('Error updating stock for order:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update stock',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   addSellerProduct,
   updateSellerProduct,
@@ -780,5 +870,6 @@ module.exports = {
   searchSellerProductsByAddress,
   checkSellerProductExists,
   getProductsBySeller,
-  updateAllSellerProductsAddress
+  updateAllSellerProductsAddress,
+  updateStockForOrder
 };
