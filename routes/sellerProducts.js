@@ -22,14 +22,22 @@ router.get('/search', searchSellerProductsByAddress);
 router.get('/seller/:sellerId', getProductsBySeller);
 router.get('/:id', getSellerProductById);
 
-// Stock update for order processing (temporarily public for testing)
-router.post('/update-stock-for-order', updateStockForOrder);
-
 // Protected routes (require Firebase authentication)
 router.use(verifyFirebaseToken);
 
 // Check if seller already has a catalog product
 router.get('/check/:productId', checkSellerProductExists);
+
+// Stock update for order processing
+router.post('/update-stock-for-order', updateStockForOrder);
+
+// Low stock products for current authenticated seller
+router.get('/low-stock', (req, res, next) => {
+  // Reuse getSellerProducts with a lowStock flag
+  // Attach lowStock flag to query and forward to controller
+  req.query.lowStock = 'true';
+  return getSellerProducts(req, res, next);
+});
 
 // Seller product management routes
 router.post('/', validateSellerProduct, addSellerProduct);

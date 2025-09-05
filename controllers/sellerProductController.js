@@ -164,13 +164,23 @@ const deleteSellerProduct = async (req, res) => {
 const getSellerProducts = async (req, res) => {
   try {
     const sellerId = req.user.uid;
-  const { page = 1, limit = 10, category, status, isAvailable, onlyOffers } = req.query;
+  const { page = 1, limit = 10, category, status, isAvailable, onlyOffers, stockLt, lowStock } = req.query;
     
     const filter = { sellerId };
     if (category) filter['productId.category'] = category;
     if (status) filter.status = status;
     if (isAvailable !== undefined) filter.isAvailable = isAvailable === 'true';
   if (onlyOffers === 'true') filter.offerPrice = { $gt: 0 };
+
+    // Low stock filters
+    if (lowStock === 'true') {
+      filter.stock = { $lt: 5 };
+    } else if (stockLt !== undefined) {
+      const n = parseInt(stockLt, 10);
+      if (!Number.isNaN(n)) {
+        filter.stock = { $lt: n };
+      }
+    }
     
     const skip = (page - 1) * limit;
     
