@@ -594,7 +594,7 @@ const checkSellerProductExists = async (req, res) => {
 const getProductsBySeller = async (req, res) => {
   try {
     const { sellerId } = req.params;
-    const { page = 1, limit = 20, category, available = true, search } = req.query;
+    const { page = 1, limit = 20, category, available = true, search, onlyOffers } = req.query;
     
     // Build aggregation pipeline for proper JOIN
     const pipeline = [];
@@ -608,6 +608,11 @@ const getProductsBySeller = async (req, res) => {
     // Only filter by availability if specified
     if (available !== undefined) {
       matchStage.isAvailable = available === 'true';
+    }
+    
+    // Filter for offers only if specified
+    if (onlyOffers === 'true') {
+      matchStage.offerPrice = { $gt: 0 };
     }
     
     pipeline.push({ $match: matchStage });
