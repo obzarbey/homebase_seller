@@ -1,5 +1,26 @@
 const SellerProduct = require('../models/SellerProduct');
 const ProductCatalog = require('../models/ProductCatalog');
+const { initializeFirebase } = require('../config/firebase');
+
+// Helper function to delete image from Firebase Storage
+const deleteImageFromStorage = async (imagePath) => {
+  if (!imagePath) return false;
+  
+  try {
+    const admin = initializeFirebase();
+    const bucket = admin.storage().bucket();
+    
+    await bucket.file(imagePath).delete();
+    console.log(`Image deleted from Firebase Storage: ${imagePath}`);
+    return true;
+  } catch (error) {
+    console.warn(`Failed to delete image from Firebase Storage: ${error.message}`);
+    if (error.code === 404) {
+      console.log('Image was already deleted or does not exist');
+    }
+    return false;
+  }
+};
 
 // Add product to seller's inventory (link to catalog)
 const addSellerProduct = async (req, res) => {
@@ -80,6 +101,17 @@ const updateSellerProduct = async (req, res) => {
         message: 'Product not found or you are not authorized to update it'
       });
     }
+
+    // Check if custom image is being changed and delete old one
+    const oldCustomImagePath = existingProduct.customImagePath;
+    const newCustomImagePath = req.body.customImagePath;
+    
+    // If new image is different from old image, delete the old one
+    if (oldCustomImagePath && 
+        newCustomImagePath !== oldCustomImagePath && 
+        existingProduct.customImageUrl) {
+      await deleteImageFromStorage(oldCustomImagePath);
+    }
     
     // Only allow updating seller-specific fields, not catalog references
     const allowedUpdates = {
@@ -139,15 +171,27 @@ const deleteSellerProduct = async (req, res) => {
         message: 'Product not found or you are not authorized to delete it'
       });
     }
-    
+
+    // Store image info for deletion
+    const customImageUrl = product.customImageUrl;
+    const customImagePath = product.customImagePath;
+
+    // Delete the product from database
     await SellerProduct.findByIdAndDelete(id);
+
+    // Try to delete custom image from Firebase Storage if it exists
+    let imageDeleted = false;
+    if (customImageUrl && customImagePath) {
+      imageDeleted = await deleteImageFromStorage(customImagePath);
+    }
     
     res.status(200).json({
       success: true,
       message: 'Product removed from inventory successfully',
       data: { 
         id, 
-        customImagePath: product.customImagePath 
+        customImagePath,
+        imageDeleted
       }
     });
   } catch (error) {
