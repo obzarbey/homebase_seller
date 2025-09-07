@@ -379,9 +379,7 @@ const getAllSellerProducts = async (req, res) => {
             { 'catalogData.name': { $regex: search, $options: 'i' } },
             { 'catalogData.brand': { $regex: search, $options: 'i' } },
             { 'catalogData.description': { $regex: search, $options: 'i' } },
-            { customNote: { $regex: search, $options: 'i' } },
-            { 'catalogData.searchKeywords': { $in: [new RegExp(search, 'i')] } },
-            { customName: { $regex: search, $options: 'i' } }
+            { customNote: { $regex: search, $options: 'i' } }
           ]
         }
       });
@@ -599,9 +597,7 @@ const searchSellerProductsByAddress = async (req, res) => {
             { 'catalogData.name': { $regex: search, $options: 'i' } },
             { 'catalogData.brand': { $regex: search, $options: 'i' } },
             { 'catalogData.description': { $regex: search, $options: 'i' } },
-            { customNote: { $regex: search, $options: 'i' } },
-            { 'catalogData.searchKeywords': { $in: [new RegExp(search, 'i')] } },
-            { customName: { $regex: search, $options: 'i' } }
+            { customNote: { $regex: search, $options: 'i' } }
           ]
         }
       });
@@ -766,9 +762,7 @@ const getProductsBySeller = async (req, res) => {
             { 'catalogData.name': { $regex: search, $options: 'i' } },
             { 'catalogData.brand': { $regex: search, $options: 'i' } },
             { 'catalogData.description': { $regex: search, $options: 'i' } },
-            { customNote: { $regex: search, $options: 'i' } },
-            { 'catalogData.searchKeywords': { $in: [new RegExp(search, 'i')] } },
-            { customName: { $regex: search, $options: 'i' } }
+            { customNote: { $regex: search, $options: 'i' } }
           ]
         }
       });
