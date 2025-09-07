@@ -22,6 +22,51 @@ const deleteImageFromStorage = async (imagePath) => {
   }
 };
 
+// Helper function to extract keywords from custom name
+const extractKeywordsFromCustomName = (customName) => {
+  if (!customName || typeof customName !== 'string') return [];
+  
+  // Split by spaces, commas, hyphens, and other common separators
+  const keywords = customName
+    .toLowerCase()
+    .split(/[\s,\-_]+/)
+    .map(word => word.trim())
+    .filter(word => word.length > 0);
+  
+  return [...new Set(keywords)]; // Remove duplicates
+};
+
+// Helper function to update search keywords in product catalog
+const updateProductCatalogSearchKeywords = async (productId, customName) => {
+  if (!customName) return;
+  
+  try {
+    const newKeywords = extractKeywordsFromCustomName(customName);
+    if (newKeywords.length === 0) return;
+    
+    // Find the product catalog and add new keywords
+    const catalogProduct = await ProductCatalog.findById(productId);
+    if (!catalogProduct) return;
+    
+    // Get existing keywords
+    const existingKeywords = catalogProduct.searchKeywords || [];
+    
+    // Merge and deduplicate keywords
+    const updatedKeywords = [...new Set([...existingKeywords, ...newKeywords])];
+    
+    // Update the catalog product
+    await ProductCatalog.findByIdAndUpdate(
+      productId,
+      { $set: { searchKeywords: updatedKeywords } },
+      { new: true }
+    );
+    
+    console.log(`Updated search keywords for product ${productId} with custom name: ${customName}`);
+  } catch (error) {
+    console.warn(`Failed to update search keywords for product ${productId}:`, error.message);
+  }
+};
+
 // Add product to seller's inventory (link to catalog)
 const addSellerProduct = async (req, res) => {
   try {
@@ -70,6 +115,11 @@ const addSellerProduct = async (req, res) => {
     
     const savedProduct = await sellerProduct.save();
     
+    // Update search keywords in product catalog if custom name is provided
+    if (customName) {
+      await updateProductCatalogSearchKeywords(productId, customName);
+    }
+    
     // Populate the catalog data for response
     await savedProduct.populate('productId');
     
@@ -106,7 +156,8 @@ const updateSellerProduct = async (req, res) => {
     const oldCustomImagePath = existingProduct.customImagePath;
     const newCustomImagePath = req.body.customImagePath;
     
-    // If new image is different from old image, delete the old one
+    // If new image is different from old image, delete the old 
+    // not working deleteImageFromStorage(oldCustomImagePath);
     if (oldCustomImagePath && 
         newCustomImagePath !== oldCustomImagePath && 
         existingProduct.customImageUrl) {
@@ -142,6 +193,11 @@ const updateSellerProduct = async (req, res) => {
       allowedUpdates,
       { new: true, runValidators: true }
     ).populate('productId');
+    
+    // Update search keywords in product catalog if custom name is provided or changed
+    if (allowedUpdates.customName) {
+      await updateProductCatalogSearchKeywords(existingProduct.productId, allowedUpdates.customName);
+    }
     
     res.status(200).json({
       success: true,
