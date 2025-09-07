@@ -407,8 +407,9 @@ const getAllSellerProducts = async (req, res) => {
         createdAt: 1,
         updatedAt: 1,
         // Flattened catalog data - what Flutter expects
-        name: '$catalogData.name',
-
+        name: { $cond: { if: { $and: [{ $ne: ['$customName', null] }, { $ne: ['$customName', ''] }] }, then: '$customName', else: '$catalogData.name' } },
+        catalogName: '$catalogData.name',
+        customName: 1,
         customCatalogCategory: '$catalogData.category',
         brand: '$catalogData.brand',
         category: '$catalogData.category',
@@ -502,7 +503,9 @@ const getSellerProductById = async (req, res) => {
           createdAt: 1,
           updatedAt: 1,
           // Flattened catalog data - what Flutter expects
-          name: '$catalogData.name',
+          name: { $cond: { if: { $and: [{ $ne: ['$customName', null] }, { $ne: ['$customName', ''] }] }, then: '$customName', else: '$catalogData.name' } },
+          catalogName: '$catalogData.name',
+          customName: 1,
 
           customCatalogCategory: '$catalogData.category',
           brand: '$catalogData.brand',
@@ -627,7 +630,9 @@ const searchSellerProductsByAddress = async (req, res) => {
         createdAt: 1,
         updatedAt: 1,
         // Flattened catalog data - what Flutter expects
-        name: '$catalogData.name',
+        name: { $cond: { if: { $and: [{ $ne: ['$customName', null] }, { $ne: ['$customName', ''] }] }, then: '$customName', else: '$catalogData.name' } },
+        catalogName: '$catalogData.name',
+        customName: 1,
 
         customCatalogCategory: '$catalogData.category',
         brand: '$catalogData.brand',
@@ -794,7 +799,9 @@ const getProductsBySeller = async (req, res) => {
         createdAt: 1,
         updatedAt: 1,
         // Flattened catalog data - what Flutter expects
-        name: '$catalogData.name',
+        name: { $cond: { if: { $and: [{ $ne: ['$customName', null] }, { $ne: ['$customName', ''] }] }, then: '$customName', else: '$catalogData.name' } },
+        catalogName: '$catalogData.name',
+        customName: 1,
 
         customCatalogCategory: '$catalogData.category',
         brand: '$catalogData.brand',
