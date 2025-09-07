@@ -270,7 +270,14 @@ const getSellerProducts = async (req, res) => {
     if (category) filter['productId.category'] = category;
     if (status) filter.status = status;
     if (isAvailable !== undefined) filter.isAvailable = isAvailable === 'true';
-  if (onlyOffers === 'true') filter.offerPrice = { $gt: 0 };
+  if (onlyOffers === 'true') {
+    filter.$expr = {
+      $and: [
+        { $gt: ['$offerPrice', 0] },
+        { $lt: ['$offerPrice', '$price'] }
+      ]
+    };
+  }
 
     // Low stock filters
     if (lowStock === 'true') {
@@ -339,7 +346,12 @@ const getAllSellerProducts = async (req, res) => {
       matchStage.sellerId = sellerId;
     }
     if (onlyOffers === 'true') {
-      matchStage.offerPrice = { $gt: 0 };
+      matchStage.$expr = {
+        $and: [
+          { $gt: ['$offerPrice', 0] },
+          { $lt: ['$offerPrice', '$price'] }
+        ]
+      };
     }
     
     pipeline.push({ $match: matchStage });
@@ -731,7 +743,12 @@ const getProductsBySeller = async (req, res) => {
     
     // Filter for offers only if specified
     if (onlyOffers === 'true') {
-      matchStage.offerPrice = { $gt: 0 };
+      matchStage.$expr = {
+        $and: [
+          { $gt: ['$offerPrice', 0] },
+          { $lt: ['$offerPrice', '$price'] }
+        ]
+      };
     }
     
     pipeline.push({ $match: matchStage });
