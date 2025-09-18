@@ -110,7 +110,8 @@ const addSellerProduct = async (req, res) => {
       customCategory: customCategory || null,
       customImageUrl: customImageUrl || null,
       customImagePath: customImagePath || null,
-      isPreOwned: req.body.isPreOwned || false
+      isPreOwned: req.body.isPreOwned || false,
+      isWeightBased: req.body.isWeightBased || false
     });
     
     const savedProduct = await sellerProduct.save();
@@ -177,6 +178,7 @@ const updateSellerProduct = async (req, res) => {
       customImagePath: req.body.customImagePath,
       isAvailable: req.body.isAvailable,
       isPreOwned: req.body.isPreOwned,
+      isWeightBased: req.body.isWeightBased,
       status: req.body.status,
       updatedAt: new Date()
     };
@@ -415,6 +417,7 @@ const getAllSellerProducts = async (req, res) => {
         customImagePath: 1,
         isAvailable: 1,
         isPreOwned: 1,
+        isWeightBased: 1,
         status: 1,
         createdAt: 1,
         updatedAt: 1,
@@ -511,6 +514,7 @@ const getSellerProductById = async (req, res) => {
           customImagePath: 1,
           isAvailable: 1,
           isPreOwned: 1,
+        isWeightBased: 1,
           status: 1,
           createdAt: 1,
           updatedAt: 1,
@@ -638,6 +642,7 @@ const searchSellerProductsByAddress = async (req, res) => {
         customImagePath: 1,
         isAvailable: 1,
         isPreOwned: 1,
+        isWeightBased: 1,
         status: 1,
         createdAt: 1,
         updatedAt: 1,
@@ -835,6 +840,7 @@ const getProductsBySeller = async (req, res) => {
         customImagePath: 1,
         isAvailable: 1,
         isPreOwned: 1,
+        isWeightBased: 1,
         status: 1,
         createdAt: 1,
         updatedAt: 1,
