@@ -771,11 +771,34 @@ const getProductsBySeller = async (req, res) => {
       }
     });
     
-    // Filter by category if specified
+    // Filter by category if specified - check customCategory first, then fallback to catalog category
     if (category && category !== 'all') {
       pipeline.push({
         $match: {
-          'catalogData.category': category
+          $or: [
+            // Use customCategory if it exists and is not empty
+            { 
+              $and: [
+                { customCategory: { $exists: true } },
+                { customCategory: { $ne: null } },
+                { customCategory: { $ne: '' } },
+                { customCategory: category }
+              ]
+            },
+            // Otherwise use catalog category, but only if customCategory is null or empty
+            {
+              $and: [
+                { 
+                  $or: [
+                    { customCategory: { $exists: false } },
+                    { customCategory: null },
+                    { customCategory: '' }
+                  ]
+                },
+                { 'catalogData.category': category }
+              ]
+            }
+          ]
         }
       });
     }
