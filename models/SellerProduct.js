@@ -81,6 +81,12 @@ const sellerProductSchema = new mongoose.Schema({
     default: false,
     index: true
   },
+  // Weight-based product (sold by kg, grams, liters, etc.)
+  isWeightBased: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
   // Sales tracking
   totalSales: {
     type: Number,

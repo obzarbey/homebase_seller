@@ -52,6 +52,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api/products', require('./routes/products')); // Legacy products route
 app.use('/api/catalog', require('./routes/catalog')); // New centralized catalog
 app.use('/api/seller-products', require('./routes/sellerProducts')); // New seller products
+app.use('/api/test', require('./routes/test')); // Test routes for notifications
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
@@ -107,7 +108,10 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: {
       health: '/health',
-      products: '/api/products'
+      products: '/api/products',
+      catalog: '/api/catalog',
+      sellerProducts: '/api/seller-products',
+      test: '/api/test'
     }
   });
 });
