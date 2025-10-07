@@ -53,7 +53,7 @@ Your Flutter app now receives data in this **flattened format**:
 
 ### 🌐 **Base URL**
 ```
-https://buynor-seller.onrender.com/api
+https://zenbee-seller.onrender.com/api
 ```
 
 ### 🛍️ **1. All Products from All Sellers**
@@ -70,7 +70,7 @@ GET /api/seller-products/all
 
 **Example:**
 ```bash
-curl "https://buynor-seller.onrender.com/api/seller-products/all?search=shirt&category=Fashion%20%26%20Lifestyle&page=1&limit=20"
+curl "https://zenbee-seller.onrender.com/api/seller-products/all?search=shirt&category=Fashion%20%26%20Lifestyle&page=1&limit=20"
 ```
 
 ### 🏪 **2. Products by Specific Seller**
@@ -86,7 +86,7 @@ GET /api/seller-products/seller/:sellerId
 
 **Example:**
 ```bash
-curl "https://buynor-seller.onrender.com/api/seller-products/seller/SELLER_ID?search=rice&available=true"
+curl "https://zenbee-seller.onrender.com/api/seller-products/seller/SELLER_ID?search=rice&available=true"
 ```
 
 ### 🔍 **3. Search by Location**
@@ -133,7 +133,7 @@ Returns single product with same flattened structure.
 
 ```dart
 class BuyerProductService {
-  static const String baseUrl = 'https://buynor-seller.onrender.com/api';
+  static const String baseUrl = 'https://zenbee-seller.onrender.com/api';
   
   // ✅ This will now work with flattened structure
   static Future<List<SellerProduct>> getAllProducts({
@@ -182,13 +182,13 @@ node test-buyer-apis.js
 ### **Manual Testing:**
 ```bash
 # Test flattened structure
-curl "https://buynor-seller.onrender.com/api/seller-products/all?limit=1" | jq '.'
+curl "https://zenbee-seller.onrender.com/api/seller-products/all?limit=1" | jq '.'
 
 # Test search functionality  
-curl "https://buynor-seller.onrender.com/api/seller-products/all?search=rice" | jq '.'
+curl "https://zenbee-seller.onrender.com/api/seller-products/all?search=rice" | jq '.'
 
 # Test categories
-curl "https://buynor-seller.onrender.com/api/catalog/categories" | jq '.'
+curl "https://zenbee-seller.onrender.com/api/catalog/categories" | jq '.'
 ```
 
 ---
