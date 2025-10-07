@@ -329,16 +329,23 @@ const getSellerProducts = async (req, res) => {
 // Get all seller products (public endpoint)
 const getAllSellerProducts = async (req, res) => {
   try {
-  const { page = 1, limit = 20, category, address, sellerId, search, onlyOffers } = req.query;
+  const { page = 1, limit = 20, category, address, sellerId, search, onlyOffers, available } = req.query;
     
     // Build aggregation pipeline for proper JOIN
     const pipeline = [];
     
     // Match stage - filter seller products
   const matchStage = {
-      isAvailable: true,
       status: 'active'
     };
+    
+    // Only filter by availability if explicitly specified
+    if (available !== undefined && available !== null && available !== '') {
+      matchStage.isAvailable = available === 'true';
+    } else {
+      // Default behavior for public browsing - only show available products
+      matchStage.isAvailable = true;
+    }
     
     if (address) {
       matchStage.address = { $regex: address, $options: 'i' };
@@ -730,7 +737,7 @@ const checkSellerProductExists = async (req, res) => {
 const getProductsBySeller = async (req, res) => {
   try {
     const { sellerId } = req.params;
-    const { page = 1, limit = 20, category, available = true, search, onlyOffers } = req.query;
+    const { page = 1, limit = 20, category, available, search, onlyOffers } = req.query;
     
     // Build aggregation pipeline for proper JOIN
     const pipeline = [];
@@ -741,8 +748,8 @@ const getProductsBySeller = async (req, res) => {
       status: 'active'
     };
     
-    // Only filter by availability if specified
-    if (available !== undefined) {
+    // Only filter by availability if explicitly specified
+    if (available !== undefined && available !== null && available !== '') {
       matchStage.isAvailable = available === 'true';
     }
     
