@@ -22,30 +22,26 @@ const deleteImageFromStorage = async (imagePath) => {
   }
 };
 
-// Helper function to extract keywords from custom text (name or description)
-const extractKeywordsFromCustomText = (customText) => {
-  if (!customText || typeof customText !== 'string') return [];
+// Helper function to extract keywords from custom name
+const extractKeywordsFromCustomName = (customName) => {
+  if (!customName || typeof customName !== 'string') return [];
   
   // Split by spaces, commas, hyphens, and other common separators
-  const keywords = customText
+  const keywords = customName
     .toLowerCase()
     .split(/[\s,\-_]+/)
     .map(word => word.trim())
-    .filter(word => word.length > 1); // Minimum 2 characters
+    .filter(word => word.length > 0);
   
   return [...new Set(keywords)]; // Remove duplicates
 };
 
 // Helper function to update search keywords in product catalog
-const updateProductCatalogSearchKeywords = async (productId, customName, customDescription) => {
-  if (!customName && !customDescription) return;
+const updateProductCatalogSearchKeywords = async (productId, customName) => {
+  if (!customName) return;
   
   try {
-    // Extract keywords from both custom name and description
-    const nameKeywords = customName ? extractKeywordsFromCustomText(customName) : [];
-    const descKeywords = customDescription ? extractKeywordsFromCustomText(customDescription) : [];
-    const newKeywords = [...nameKeywords, ...descKeywords];
-    
+    const newKeywords = extractKeywordsFromCustomName(customName);
     if (newKeywords.length === 0) return;
     
     // Find the product catalog and add new keywords
@@ -65,8 +61,7 @@ const updateProductCatalogSearchKeywords = async (productId, customName, customD
       { new: true }
     );
     
-    const customTexts = [customName, customDescription].filter(Boolean).join(', ');
-    console.log(`Updated search keywords for product ${productId} with custom text: ${customTexts}`);
+    console.log(`Updated search keywords for product ${productId} with custom name: ${customName}`);
   } catch (error) {
     console.warn(`Failed to update search keywords for product ${productId}:`, error.message);
   }
@@ -76,7 +71,7 @@ const updateProductCatalogSearchKeywords = async (productId, customName, customD
 const addSellerProduct = async (req, res) => {
   try {
     const sellerId = req.user.uid;
-    const { productId, price, offerPrice, stock, address, customNote, customName, customDescription, customCategory, customImageUrl, customImagePath } = req.body;
+    const { productId, price, offerPrice, stock, address, customNote, customDescription, customName, customCategory, customImageUrl, customImagePath } = req.body;
     
     // Verify catalog product exists and is approved
     const catalogProduct = await ProductCatalog.findById(productId);
@@ -111,20 +106,19 @@ const addSellerProduct = async (req, res) => {
       stock,
       address,
       customNote: customNote || '',
-      customName: customName || null,
       customDescription: customDescription || null,
+      customName: customName || null,
       customCategory: customCategory || null,
       customImageUrl: customImageUrl || null,
       customImagePath: customImagePath || null,
-      isPreOwned: req.body.isPreOwned || false,
-      isWeightBased: req.body.isWeightBased || false
+      isPreOwned: req.body.isPreOwned || false
     });
     
     const savedProduct = await sellerProduct.save();
     
-    // Update search keywords in product catalog if custom name or description is provided
-    if (customName || customDescription) {
-      await updateProductCatalogSearchKeywords(productId, customName, customDescription);
+    // Update search keywords in product catalog if custom name is provided
+    if (customName) {
+      await updateProductCatalogSearchKeywords(productId, customName);
     }
     
     // Populate the catalog data for response
@@ -178,14 +172,13 @@ const updateSellerProduct = async (req, res) => {
       stock: req.body.stock,
       address: req.body.address,
       customNote: req.body.customNote,
-      customName: req.body.customName,
       customDescription: req.body.customDescription,
+      customName: req.body.customName,
       customCategory: req.body.customCategory,
       customImageUrl: req.body.customImageUrl,
       customImagePath: req.body.customImagePath,
       isAvailable: req.body.isAvailable,
       isPreOwned: req.body.isPreOwned,
-      isWeightBased: req.body.isWeightBased,
       status: req.body.status,
       updatedAt: new Date()
     };
@@ -203,9 +196,9 @@ const updateSellerProduct = async (req, res) => {
       { new: true, runValidators: true }
     ).populate('productId');
     
-    // Update search keywords in product catalog if custom name or description is provided or changed
-    if (allowedUpdates.customName || allowedUpdates.customDescription) {
-      await updateProductCatalogSearchKeywords(existingProduct.productId, allowedUpdates.customName, allowedUpdates.customDescription);
+    // Update search keywords in product catalog if custom name is provided or changed
+    if (allowedUpdates.customName) {
+      await updateProductCatalogSearchKeywords(existingProduct.productId, allowedUpdates.customName);
     }
     
     res.status(200).json({
@@ -401,7 +394,6 @@ const getAllSellerProducts = async (req, res) => {
             { 'catalogData.brand': { $regex: search, $options: 'i' } },
             { 'catalogData.description': { $regex: search, $options: 'i' } },
             { customNote: { $regex: search, $options: 'i' } },
-            { customDescription: { $regex: search, $options: 'i' } },
             { 'catalogData.searchKeywords': { $in: [new RegExp(search, 'i')] } },
             { customName: { $regex: search, $options: 'i' } }
           ]
@@ -420,12 +412,12 @@ const getAllSellerProducts = async (req, res) => {
         stock: 1,
         address: 1,
         customNote: 1,
+        customDescription: 1,
         customCategory: 1,
         customImageUrl: 1,
         customImagePath: 1,
         isAvailable: 1,
         isPreOwned: 1,
-        isWeightBased: 1,
         status: 1,
         createdAt: 1,
         updatedAt: 1,
@@ -517,12 +509,12 @@ const getSellerProductById = async (req, res) => {
           stock: 1,
           address: 1,
           customNote: 1,
+          customDescription: 1,
           customCategory: 1,
           customImageUrl: 1,
           customImagePath: 1,
           isAvailable: 1,
           isPreOwned: 1,
-        isWeightBased: 1,
           status: 1,
           createdAt: 1,
           updatedAt: 1,
@@ -627,7 +619,6 @@ const searchSellerProductsByAddress = async (req, res) => {
             { 'catalogData.brand': { $regex: search, $options: 'i' } },
             { 'catalogData.description': { $regex: search, $options: 'i' } },
             { customNote: { $regex: search, $options: 'i' } },
-            { customDescription: { $regex: search, $options: 'i' } },
             { 'catalogData.searchKeywords': { $in: [new RegExp(search, 'i')] } },
             { customName: { $regex: search, $options: 'i' } }
           ]
@@ -646,12 +637,12 @@ const searchSellerProductsByAddress = async (req, res) => {
         stock: 1,
         address: 1,
         customNote: 1,
+        customDescription: 1,
         customCategory: 1,
         customImageUrl: 1,
         customImagePath: 1,
         isAvailable: 1,
         isPreOwned: 1,
-        isWeightBased: 1,
         status: 1,
         createdAt: 1,
         updatedAt: 1,
@@ -826,7 +817,6 @@ const getProductsBySeller = async (req, res) => {
             { 'catalogData.brand': { $regex: search, $options: 'i' } },
             { 'catalogData.description': { $regex: search, $options: 'i' } },
             { customNote: { $regex: search, $options: 'i' } },
-            { customDescription: { $regex: search, $options: 'i' } },
             { 'catalogData.searchKeywords': { $in: [new RegExp(search, 'i')] } },
             { customName: { $regex: search, $options: 'i' } }
           ]
@@ -845,12 +835,12 @@ const getProductsBySeller = async (req, res) => {
         stock: 1,
         address: 1,
         customNote: 1,
+        customDescription: 1,
         customCategory: 1,
         customImageUrl: 1,
         customImagePath: 1,
         isAvailable: 1,
         isPreOwned: 1,
-        isWeightBased: 1,
         status: 1,
         createdAt: 1,
         updatedAt: 1,
