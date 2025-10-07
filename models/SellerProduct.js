@@ -46,6 +46,12 @@ const sellerProductSchema = new mongoose.Schema({
     maxlength: 100,
     default: null
   },
+  customDescription: {
+    type: String,
+    trim: true,
+    maxlength: 1000,
+    default: null
+  },
   customCategory: {
     type: String,
     trim: true,

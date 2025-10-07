@@ -33,7 +33,7 @@ envVars:
   - key: MONGODB_URI
     sync: false  # Set manually in dashboard
   - key: FIREBASE_PROJECT_ID
-    value: buynor-25
+    value: zenbee-25
   - key: FIREBASE_PRIVATE_KEY_ID
     sync: false  # Set manually in dashboard
   - key: FIREBASE_PRIVATE_KEY

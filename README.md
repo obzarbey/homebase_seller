@@ -50,7 +50,7 @@ FIREBASE_CLIENT_ID=your-client-id
 
 ### 3. Get Firebase Admin SDK Credentials
 1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Select your project (buynor-25)
+2. Select your project (zenbee-25)
 3. Go to Project Settings > Service Accounts
 4. Click "Generate new private key"
 5. Download the JSON file and extract the values for your `.env` file
