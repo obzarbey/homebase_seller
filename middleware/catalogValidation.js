@@ -33,11 +33,13 @@ const validateSellerProduct = (req, res, next) => {
     address: Joi.string().trim().required(),
     customNote: Joi.string().trim().max(500).allow('').default(''),
     customName: Joi.string().trim().max(100).allow(null).default(null),
+    customDescription: Joi.string().trim().max(1000).allow(null).default(null),
     customCategory: Joi.string().trim().max(50).allow(null).default(null),
     customImageUrl: Joi.string().uri().allow(null).default(null),
     customImagePath: Joi.string().allow('').default(null),
     isAvailable: Joi.boolean().default(true),
     isPreOwned: Joi.boolean().default(false),
+    isWeightBased: Joi.boolean().default(false),
     status: Joi.string().valid('active', 'inactive', 'out_of_stock').default('active')
   });
 
@@ -63,11 +65,13 @@ const validateSellerProductUpdate = (req, res, next) => {
     address: Joi.string().trim(),
     customNote: Joi.string().trim().max(500).allow(''),
     customName: Joi.string().trim().max(100).allow(null),
+    customDescription: Joi.string().trim().max(1000).allow(null),
     customCategory: Joi.string().trim().max(50).allow(null),
     customImageUrl: Joi.string().uri().allow(null),
     customImagePath: Joi.string().allow(''),
     isAvailable: Joi.boolean(),
     isPreOwned: Joi.boolean(),
+    isWeightBased: Joi.boolean(),
     status: Joi.string().valid('active', 'inactive', 'out_of_stock')
   });
 
