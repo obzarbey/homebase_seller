@@ -22,6 +22,12 @@ const sellerProductSchema = new mongoose.Schema({
     default: 0,
     min: 0
   },
+  costPrice: {
+    type: Number,
+    required: true,
+    min: 0,
+    default: 0
+  },
   stock: {
     type: Number,
     required: true,

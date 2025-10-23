@@ -52,6 +52,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api/products', require('./routes/products')); // Legacy products route
 app.use('/api/catalog', require('./routes/catalog')); // New centralized catalog
 app.use('/api/seller-products', require('./routes/sellerProducts')); // New seller products
+app.use('/api/shop-management', require('./routes/shopManagement')); // Shop management and analytics
 app.use('/api/test', require('./routes/test')); // Test routes for notifications
 
 // Health check endpoint

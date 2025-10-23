@@ -71,7 +71,7 @@ const updateProductCatalogSearchKeywords = async (productId, customName) => {
 const addSellerProduct = async (req, res) => {
   try {
     const sellerId = req.user.uid;
-    const { productId, price, offerPrice, stock, address, customNote, customDescription, customName, customCategory, customImageUrl, customImagePath } = req.body;
+    const { productId, price, offerPrice, costPrice, stock, address, customNote, customDescription, customName, customCategory, customImageUrl, customImagePath } = req.body;
     
     // Verify catalog product exists and is approved
     const catalogProduct = await ProductCatalog.findById(productId);
@@ -103,6 +103,7 @@ const addSellerProduct = async (req, res) => {
       productId,
       price,
       offerPrice: offerPrice || 0,
+      costPrice: costPrice || 0,
       stock,
       address,
       customNote: customNote || '',
@@ -170,6 +171,7 @@ const updateSellerProduct = async (req, res) => {
     const allowedUpdates = {
       price: req.body.price,
       offerPrice: req.body.offerPrice,
+      costPrice: req.body.costPrice,
       stock: req.body.stock,
       address: req.body.address,
       customNote: req.body.customNote,
@@ -957,12 +959,7 @@ const updateAllSellerProductsAddress = async (req, res) => {
   }
 };
 
-// Update stock for multiple products (for order processing)
-// Accepts orderItems: Array of
-// - { productId, sellerId, quantityToReduce } where productId can be either the catalog productId (preferred)
-//   or the seller product _id (legacy/client variations)
-// - OR { sellerProductId, sellerId, quantityToReduce }
-// The controller will flexibly resolve the correct SellerProduct document.
+
 const updateStockForOrder = async (req, res) => {
   try {
   const { orderItems } = req.body; // See accepted shapes above

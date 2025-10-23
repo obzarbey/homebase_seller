@@ -29,6 +29,7 @@ const validateSellerProduct = (req, res, next) => {
     productId: Joi.string().required(),
     price: Joi.number().min(0).required(),
     offerPrice: Joi.number().min(0).default(0),
+    costPrice: Joi.number().min(0).required(),
     stock: Joi.number().min(0).required(),
     address: Joi.string().trim().required(),
     customNote: Joi.string().trim().max(500).allow('').default(''),
@@ -61,6 +62,7 @@ const validateSellerProductUpdate = (req, res, next) => {
   const schema = Joi.object({
     price: Joi.number().min(0),
     offerPrice: Joi.number().min(0),
+    costPrice: Joi.number().min(0),
     stock: Joi.number().min(0),
     address: Joi.string().trim(),
     customNote: Joi.string().trim().max(500).allow(''),
@@ -108,9 +110,102 @@ const validateCatalogApproval = (req, res, next) => {
   next();
 };
 
+const validateManualSale = (req, res, next) => {
+  const schema = Joi.object({
+    productId: Joi.string().required(),
+    productName: Joi.string().trim().max(100).required(),
+    customName: Joi.string().trim().max(100).allow('').default(null),
+    quantity: Joi.number().min(1).required(),
+    sellingPrice: Joi.number().min(0).required(),
+    costPrice: Joi.number().min(0).required(),
+    category: Joi.string().trim().required(),
+    isWeightBased: Joi.boolean().default(false),
+    unit: Joi.string().trim().max(20).default('piece'),
+    imageUrl: Joi.string().uri().allow('').default(null),
+    customerName: Joi.string().trim().max(100).allow('').default(null),
+    customerPhone: Joi.string().trim().max(20).allow('').default(null),
+    notes: Joi.string().trim().max(500).allow('').default(null),
+    saleDate: Joi.date().default(() => new Date())
+  });
+
+  const { error, value } = schema.validate(req.body);
+  
+  if (error) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation error',
+      details: error.details.map(detail => detail.message)
+    });
+  }
+
+  req.body = value;
+  next();
+};
+
+const validateExpense = (req, res, next) => {
+  const schema = Joi.object({
+    title: Joi.string().trim().max(100).required(),
+    description: Joi.string().trim().max(1000).required(),
+    amount: Joi.number().min(0).required(),
+    category: Joi.string().valid(
+      'inventory', 'marketing', 'utilities', 'transport', 
+      'packaging', 'fees', 'maintenance', 'other'
+    ).required(),
+    type: Joi.string().valid('business', 'operational', 'marketing').required(),
+    reference: Joi.string().trim().max(50).allow('').default(null),
+    attachmentUrl: Joi.string().uri().allow('').default(null),
+    expenseDate: Joi.date().default(() => new Date())
+  });
+
+  const { error, value } = schema.validate(req.body);
+  
+  if (error) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation error',
+      details: error.details.map(detail => detail.message)
+    });
+  }
+
+  req.body = value;
+  next();
+};
+
+const validateExpenseUpdate = (req, res, next) => {
+  const schema = Joi.object({
+    title: Joi.string().trim().max(100),
+    description: Joi.string().trim().max(1000),
+    amount: Joi.number().min(0),
+    category: Joi.string().valid(
+      'inventory', 'marketing', 'utilities', 'transport', 
+      'packaging', 'fees', 'maintenance', 'other'
+    ),
+    type: Joi.string().valid('business', 'operational', 'marketing'),
+    reference: Joi.string().trim().max(50).allow(''),
+    attachmentUrl: Joi.string().uri().allow(''),
+    expenseDate: Joi.date()
+  });
+
+  const { error, value } = schema.validate(req.body);
+  
+  if (error) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation error',
+      details: error.details.map(detail => detail.message)
+    });
+  }
+
+  req.body = value;
+  next();
+};
+
 module.exports = { 
   validateCatalogProduct, 
   validateSellerProduct, 
   validateSellerProductUpdate, 
-  validateCatalogApproval 
+  validateCatalogApproval,
+  validateManualSale,
+  validateExpense,
+  validateExpenseUpdate
 };
