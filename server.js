@@ -8,10 +8,6 @@ const { initializeFirebase } = require('./config/firebase');
 
 const app = express();
 
-// Trust only the first proxy (Render/Heroku style) to avoid permissive trust proxy warnings
-// This ensures Express correctly uses X-Forwarded-* headers without allowing trivial spoofing
-app.set('trust proxy', 1);
-
 // Connect to MongoDB
 connectDB();
 
