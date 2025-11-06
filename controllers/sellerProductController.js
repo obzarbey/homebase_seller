@@ -296,6 +296,20 @@ const getSellerProducts = async (req, res) => {
     }
     
     const skip = (page - 1) * limit;
+
+    // Debug logging
+    console.log('[SellerProducts] Fetch request', {
+      sellerId,
+      page: Number(page),
+      limit: Number(limit),
+      category: category || null,
+      status: status || null,
+      isAvailable,
+      onlyOffers,
+      lowStock,
+      stockLt,
+      filter
+    });
     
     const products = await SellerProduct.find(filter)
       .populate('productId')
@@ -304,6 +318,11 @@ const getSellerProducts = async (req, res) => {
       .limit(parseInt(limit));
     
     const total = await SellerProduct.countDocuments(filter);
+
+    console.log('[SellerProducts] Query result', {
+      returned: products.length,
+      total
+    });
     
     res.status(200).json({
       success: true,

@@ -10,16 +10,26 @@ const connectDB = async () => {
     console.log('🔄 Connecting to MongoDB...');
     console.log('Environment:', process.env.NODE_ENV || 'development');
     
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+    // Allow selecting DB name explicitly if URI doesn't include it (Atlas defaults to "test")
+    const connectOptions = {
       serverSelectionTimeoutMS: 10000, // 10 seconds timeout
       socketTimeoutMS: 45000, // 45 seconds socket timeout
       maxPoolSize: 10, // Maximum number of connections in the connection pool
       minPoolSize: 1, // Minimum number of connections in the connection pool
       maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
-    });
+    };
+
+    if (process.env.MONGODB_DBNAME) {
+      connectOptions.dbName = process.env.MONGODB_DBNAME;
+      console.log(`🗄️  Using explicit DB name from env: ${process.env.MONGODB_DBNAME}`);
+    } else {
+      console.log('🗄️  No MONGODB_DBNAME provided. Will use db from URI or default (test).');
+    }
+
+    const conn = await mongoose.connect(process.env.MONGODB_URI, connectOptions);
 
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    console.log(`📊 Database: ${conn.connection.name}`);
+  console.log(`📊 Database: ${conn.connection.name}`);
   } catch (error) {
     console.error('❌ Error connecting to MongoDB:', error.message);
     
