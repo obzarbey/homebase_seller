@@ -1092,5 +1092,67 @@ module.exports = {
   checkSellerProductExists,
   getProductsBySeller,
   updateAllSellerProductsAddress,
-  updateStockForOrder
+  updateStockForOrder,
+  // Debug/summary endpoint for the authenticated seller
+  // Returns counts and environment info to quickly validate data presence
+  getMySellerProductsSummary: async (req, res) => {
+    try {
+      const sellerId = req.user.uid;
+      const mongoose = require('mongoose');
+
+      // Basic counts
+      const [
+        total,
+        active,
+        inactive,
+        outOfStock,
+        available,
+        offers,
+        lowStock
+      ] = await Promise.all([
+        SellerProduct.countDocuments({ sellerId }),
+        SellerProduct.countDocuments({ sellerId, status: 'active' }),
+        SellerProduct.countDocuments({ sellerId, status: 'inactive' }),
+        SellerProduct.countDocuments({ sellerId, status: 'out_of_stock' }),
+        SellerProduct.countDocuments({ sellerId, isAvailable: true }),
+        SellerProduct.countDocuments({
+          sellerId,
+          $expr: { $and: [{ $gt: ['$offerPrice', 0] }, { $lt: ['$offerPrice', '$price'] }] }
+        }),
+        SellerProduct.countDocuments({ sellerId, stock: { $lt: 5 } })
+      ]);
+
+      // Distinct categories via aggregation join with ProductCatalog
+      const categoriesAgg = await SellerProduct.aggregate([
+        { $match: { sellerId } },
+        {
+          $lookup: {
+            from: 'productcatalogs',
+            localField: 'productId',
+            foreignField: '_id',
+            as: 'catalogData'
+          }
+        },
+        { $unwind: { path: '$catalogData', preserveNullAndEmptyArrays: true } },
+        { $match: { 'catalogData.category': { $exists: true } } },
+        { $group: { _id: '$catalogData.category', count: { $sum: 1 } } },
+        { $sort: { count: -1 } }
+      ]);
+
+      const dbName = mongoose.connection?.name;
+
+      res.status(200).json({
+        success: true,
+        data: {
+          sellerId,
+          dbName,
+          counts: { total, active, inactive, outOfStock, available, offers, lowStock },
+          categories: categoriesAgg.map(c => ({ category: c._id, count: c.count }))
+        }
+      });
+    } catch (error) {
+      console.error('Error in getMySellerProductsSummary:', error);
+      res.status(500).json({ success: false, message: 'Failed to get summary', error: error.message });
+    }
+  }
 };

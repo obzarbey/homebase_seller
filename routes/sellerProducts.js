@@ -13,7 +13,8 @@ const {
   checkSellerProductExists,
   getProductsBySeller,
   updateAllSellerProductsAddress,
-  updateStockForOrder
+  updateStockForOrder,
+  getMySellerProductsSummary
 } = require('../controllers/sellerProductController');
 
 // Public routes (no authentication required)
@@ -27,6 +28,9 @@ router.use(verifyFirebaseToken);
 
 // Check if seller already has a catalog product
 router.get('/check/:productId', checkSellerProductExists);
+
+// Authenticated seller summary/debug (safe output for current user)
+router.get('/me/summary', getMySellerProductsSummary);
 
 // Stock update for order processing
 router.post('/update-stock-for-order', updateStockForOrder);
