@@ -8,6 +8,9 @@ const { initializeFirebase } = require('./config/firebase');
 
 const app = express();
 
+// Trust proxy for deployment platforms like Render, Heroku, etc.
+app.set('trust proxy', true);
+
 // Connect to MongoDB
 connectDB();
 
