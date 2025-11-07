@@ -362,8 +362,8 @@ const getProfitLossReport = async (req, res) => {
       expenseDate: { $gte: start, $lte: end }
     });
 
-    // Calculate sales metrics
-    const totalSales = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+  // Calculate sales metrics
+  const totalSales = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
     const totalCosts = sales.reduce((sum, sale) => sum + sale.totalCost, 0);
     const grossProfit = totalSales - totalCosts;
     const totalOrdersCount = sales.filter(s => s.saleType === 'order').length;
@@ -383,7 +383,11 @@ const getProfitLossReport = async (req, res) => {
     // Calculate top products
     const productMap = {};
     sales.forEach(sale => {
-      const key = sale.productId._id.toString();
+      // Use productId if available; otherwise key by product name for manual entries
+      const key = sale.productId && sale.productId._id
+        ? sale.productId._id.toString()
+        : `manual:${(sale.productName || 'Unknown').toLowerCase()}:${(sale.customName || '')}`;
+
       if (productMap[key]) {
         productMap[key].totalQuantity += sale.quantity;
         productMap[key].totalRevenue += sale.totalAmount;
@@ -392,11 +396,11 @@ const getProfitLossReport = async (req, res) => {
         productMap[key].salesCount += 1;
       } else {
         productMap[key] = {
-          productId: sale.productId._id,
+          productId: sale.productId && sale.productId._id ? sale.productId._id : null,
           productName: sale.productName,
           customName: sale.customName,
           category: sale.category,
-          imageUrl: sale.imageUrl || sale.productId.imageUrl,
+          imageUrl: sale.imageUrl || (sale.productId && sale.productId.imageUrl) || null,
           totalQuantity: sale.quantity,
           totalRevenue: sale.totalAmount,
           totalCost: sale.totalCost,

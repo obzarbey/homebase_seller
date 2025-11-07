@@ -112,19 +112,20 @@ const validateCatalogApproval = (req, res, next) => {
 
 const validateManualSale = (req, res, next) => {
   const schema = Joi.object({
-    productId: Joi.string().required(),
+    // Allow manual sales without linking to a catalog product
+    productId: Joi.string().allow('', null).optional(),
     productName: Joi.string().trim().max(100).required(),
-    customName: Joi.string().trim().max(100).allow('').default(null),
+    customName: Joi.string().trim().max(100).allow('', null).default(null),
     quantity: Joi.number().min(1).required(),
     sellingPrice: Joi.number().min(0).required(),
     costPrice: Joi.number().min(0).required(),
     category: Joi.string().trim().required(),
     isWeightBased: Joi.boolean().default(false),
     unit: Joi.string().trim().max(20).default('piece'),
-    imageUrl: Joi.string().uri().allow('').default(null),
-    customerName: Joi.string().trim().max(100).allow('').default(null),
-    customerPhone: Joi.string().trim().max(20).allow('').default(null),
-    notes: Joi.string().trim().max(500).allow('').default(null),
+    imageUrl: Joi.string().uri().allow('', null).default(null),
+    customerName: Joi.string().trim().max(100).allow('', null).default(null),
+    customerPhone: Joi.string().trim().max(20).allow('', null).default(null),
+    notes: Joi.string().trim().max(500).allow('', null).default(null),
     saleDate: Joi.date().default(() => new Date())
   });
 

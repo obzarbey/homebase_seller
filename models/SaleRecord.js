@@ -14,7 +14,8 @@ const saleRecordSchema = new mongoose.Schema({
   productId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ProductCatalog',
-    required: true,
+    required: false,
+    default: null,
     index: true
   },
   productName: {
