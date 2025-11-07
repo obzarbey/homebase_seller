@@ -525,6 +525,280 @@ const getProductsWithProfitability = async (req, res) => {
   }
 };
 
+// Create sales records from completed orders
+const createSalesFromOrder = async (req, res) => {
+  try {
+    const sellerId = req.user.uid;
+    const { orderId } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'orderId is required'
+      });
+    }
+
+    // Fetch the order from Firestore using Firebase Admin SDK
+    const admin = require('firebase-admin');
+    const firestore = admin.firestore();
+    
+    const orderRef = await firestore.collection('orders').doc(orderId).get();
+    
+    if (!orderRef.exists) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    const orderData = orderRef.data();
+
+    // Verify this order belongs to the current seller
+    if (orderData.sellerId !== sellerId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized: This order does not belong to your shop'
+      });
+    }
+
+    // Check if order is already converted to sales records
+    const existingSales = await SaleRecord.find({ orderId });
+    if (existingSales.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Sales records already created for this order'
+      });
+    }
+
+    // Get customer info from order or users collection
+    let customerName = orderData.buyerName || 'Unknown';
+    let customerPhone = orderData.buyerPhone || null;
+    
+    if (!customerName && orderData.userId) {
+      try {
+        const userRef = await firestore.collection('users').doc(orderData.userId).get();
+        if (userRef.exists) {
+          const userData = userRef.data();
+          customerName = userData.name || 'Unknown';
+          customerPhone = userData.phone || null;
+        }
+      } catch (err) {
+        console.log('Could not fetch buyer info:', err.message);
+      }
+    }
+
+    // Create sales records for each product in the order
+    const products = orderData.products || [];
+    const createdSales = [];
+
+    for (const product of products) {
+      // Get product details from MongoDB
+      let productData = null;
+      try {
+        if (product.productId) {
+          const ProductCatalog = require('../models/Product');
+          productData = await ProductCatalog.findById(product.productId).select('name brand category imageUrl');
+        }
+      } catch (err) {
+        console.log('Could not fetch product details:', err.message);
+      }
+
+      const totalAmount = (product.quantity || 0) * (product.price || 0);
+      // Estimate cost price from current SellerProduct if available
+      let costPrice = product.price || 0; // Default to selling price
+      try {
+        const sellerProd = await SellerProduct.findOne({
+          sellerId,
+          productId: product.productId
+        });
+        if (sellerProd) {
+          costPrice = sellerProd.costPrice || product.price;
+        }
+      } catch (err) {
+        console.log('Could not fetch cost price:', err.message);
+      }
+
+      const totalCost = (product.quantity || 0) * costPrice;
+      const profit = totalAmount - totalCost;
+
+      const saleRecord = new SaleRecord({
+        sellerId,
+        orderId,
+        productId: product.productId,
+        productName: product.name || 'Unknown Product',
+        customName: product.customName || null,
+        quantity: product.quantity || 0,
+        sellingPrice: product.price || 0,
+        costPrice,
+        totalAmount,
+        totalCost,
+        profit,
+        saleType: 'order',
+        category: productData?.category || product.category || 'Uncategorized',
+        isWeightBased: product.isWeightBased || false,
+        unit: product.unit || 'piece',
+        imageUrl: product.imageUrl || productData?.imageUrl || null,
+        customerName,
+        customerPhone,
+        saleDate: orderData.date ? new Date(orderData.date.toDate?.() || orderData.date) : new Date()
+      });
+
+      const savedSale = await saleRecord.save();
+      createdSales.push(savedSale);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: `Sales records created successfully for ${createdSales.length} product(s)`,
+      data: {
+        orderId,
+        salesCreated: createdSales.length,
+        sales: createdSales
+      }
+    });
+  } catch (error) {
+    console.error('Error creating sales from order:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error creating sales records from order',
+      error: error.message
+    });
+  }
+};
+
+// Auto-sync: Create sales records from all delivered orders
+const syncDeliveredOrdersToSales = async (req, res) => {
+  try {
+    const sellerId = req.user.uid;
+    const admin = require('firebase-admin');
+    const firestore = admin.firestore();
+
+    // Get all delivered orders for this seller that don't have sales records yet
+    const ordersRef = await firestore.collection('orders')
+      .where('sellerId', '==', sellerId)
+      .where('deliveryStatus', '==', 6) // 6 = delivered (from DeliveryStatus enum)
+      .get();
+
+    let syncedCount = 0;
+    const results = [];
+
+    for (const orderDoc of ordersRef.docs) {
+      const orderId = orderDoc.id;
+      const orderData = orderDoc.data();
+
+      // Check if sales records already exist
+      const existingSales = await SaleRecord.find({ orderId });
+      if (existingSales.length > 0) {
+        results.push({
+          orderId,
+          status: 'skipped',
+          reason: 'Sales records already exist'
+        });
+        continue;
+      }
+
+      try {
+        // Create sales records for this order
+        const products = orderData.products || [];
+        let customerName = orderData.buyerName || 'Unknown';
+        let customerPhone = orderData.buyerPhone || null;
+
+        if (!customerName && orderData.userId) {
+          try {
+            const userRef = await firestore.collection('users').doc(orderData.userId).get();
+            if (userRef.exists) {
+              const userData = userRef.data();
+              customerName = userData.name || 'Unknown';
+              customerPhone = userData.phone || null;
+            }
+          } catch (err) {
+            console.log('Could not fetch buyer info:', err.message);
+          }
+        }
+
+        for (const product of products) {
+          let productData = null;
+          let costPrice = product.price || 0;
+
+          try {
+            const ProductCatalog = require('../models/Product');
+            productData = await ProductCatalog.findById(product.productId).select('name brand category imageUrl');
+            
+            const sellerProd = await SellerProduct.findOne({
+              sellerId,
+              productId: product.productId
+            });
+            if (sellerProd) {
+              costPrice = sellerProd.costPrice || product.price;
+            }
+          } catch (err) {
+            console.log('Could not fetch product details:', err.message);
+          }
+
+          const totalAmount = (product.quantity || 0) * (product.price || 0);
+          const totalCost = (product.quantity || 0) * costPrice;
+          const profit = totalAmount - totalCost;
+
+          const saleRecord = new SaleRecord({
+            sellerId,
+            orderId,
+            productId: product.productId,
+            productName: product.name || 'Unknown Product',
+            customName: product.customName || null,
+            quantity: product.quantity || 0,
+            sellingPrice: product.price || 0,
+            costPrice,
+            totalAmount,
+            totalCost,
+            profit,
+            saleType: 'order',
+            category: productData?.category || product.category || 'Uncategorized',
+            isWeightBased: product.isWeightBased || false,
+            unit: product.unit || 'piece',
+            imageUrl: product.imageUrl || productData?.imageUrl || null,
+            customerName,
+            customerPhone,
+            saleDate: orderData.date ? new Date(orderData.date.toDate?.() || orderData.date) : new Date()
+          });
+
+          await saleRecord.save();
+        }
+
+        syncedCount++;
+        results.push({
+          orderId,
+          status: 'synced',
+          productsCount: products.length
+        });
+      } catch (err) {
+        console.error('Error syncing order:', orderId, err);
+        results.push({
+          orderId,
+          status: 'failed',
+          error: err.message
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Synced ${syncedCount} delivered orders to sales records`,
+      data: {
+        totalProcessed: ordersRef.size,
+        synced: syncedCount,
+        results
+      }
+    });
+  } catch (error) {
+    console.error('Error syncing orders to sales:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error syncing orders to sales',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getSalesData,
   getExpensesData,
@@ -533,5 +807,7 @@ module.exports = {
   updateExpense,
   deleteExpense,
   getProfitLossReport,
-  getProductsWithProfitability
+  getProductsWithProfitability,
+  createSalesFromOrder,
+  syncDeliveredOrdersToSales
 };

@@ -14,15 +14,37 @@ const {
   updateExpense,
   deleteExpense,
   getProfitLossReport,
-  getProductsWithProfitability
+  getProductsWithProfitability,
+  createSalesFromOrder,
+  syncDeliveredOrdersToSales
 } = require('../controllers/shopManagementController');
 
-// All routes require Firebase authentication
+// Health check endpoint (no auth required)
+router.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Shop Management API is running',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      sales: '/sales',
+      expenses: '/expenses',
+      reports: '/report/profit-loss',
+      sync: '/sales/from-order',
+      bulkSync: '/sales/sync-delivered-orders'
+    }
+  });
+});
+
+// All routes below require Firebase authentication
 router.use(verifyFirebaseToken);
 
 // Sales management routes
 router.get('/sales', getSalesData);
 router.post('/sales/manual', validateManualSale, addManualSale);
+
+// Order to Sales sync routes
+router.post('/sales/from-order', createSalesFromOrder);
+router.post('/sales/sync-delivered-orders', syncDeliveredOrdersToSales);
 
 // Expenses management routes
 router.get('/expenses', getExpensesData);
